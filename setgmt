@@ -1,0 +1,21 @@
+#!/bin/bash
+# Default settings for gmt
+
+version=`gmt --version`
+
+tick='--'
+if [[ $version == "5.5"* ]]
+then
+  tick=''
+fi
+gmt set "$tick"FONT_ANNOT_PRIMARY=6p \
+        "$tick"FONT_ANNOT_SECONDARY=6p \
+        "$tick"FONT_LABEL=7p \
+        "$tick"FONT_TITLE=7p,Helvetica-Bold \
+        "$tick"MAP_FRAME_PEN=0.5p \
+        "$tick"MAP_LABEL_OFFSET=3p \
+        "$tick"MAP_TICK_LENGTH_PRIMARY=1p \
+        "$tick"MAP_TICK_LENGTH_SECONDARY=0.5p \
+        "$tick"MAP_TITLE_OFFSET=7p \
+        "$tick"PS_MEDIA=A4 \
+        "$tick"PS_PAGE_ORIENTATION=portrait

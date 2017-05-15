@@ -1,0 +1,24 @@
+#!/bin/bash
+# Test for gmt version
+
+set -e
+version=`gmt --version`
+
+if [[ $# -eq 0 ]]
+then
+    if [[ $version == "5.3"* ]]
+    then
+        echo "GMT >= 5.3 found"
+    else
+        echo "ERROR: GMT 5.3 required, found GMT $version"
+        exit 1
+    fi
+else
+    if [[ $version == "$1"* ]]
+    then
+        echo "GMT $1 found"
+    else
+        echo "ERROR: GMT $1 required, found GMT $version"
+        exit 1
+    fi
+fi

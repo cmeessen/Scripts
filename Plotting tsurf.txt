@@ -1,0 +1,10 @@
+# Plot tsurf with GMT
+# Source: http://comments.gmane.org/gmane.comp.gis.gmt.user/18640
+# pscontout documentation: http://gmt.soest.hawaii.edu/doc/latest/pscontour.html
+
+# Gocad tsurf file: Basement.ts
+
+awk '($1 == "VRTX") {print $2,$3,$4,$5}' Basement.ts |sort -n | awk '{print $2,$3,$4}'> Basement_table_sorted.dat
+awk '($1 == "TRGL") {print $2,$3,$4}' Basement.ts > triangulation_Basement.xy
+
+pscontour $RANGE $PROJ Basement_table_sorted.dat -Ttriangulation_Basement.xy  -B200f100eSnw -Ctopo.cpt   > $ps
