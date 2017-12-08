@@ -7,6 +7,9 @@ tick='--'
 if [[ $version == "5.5"* ]]
 then
   tick=''
+elif [[ $version == "5.4"* ]]
+then
+  tick=''
 fi
 gmt set "$tick"FONT_ANNOT_PRIMARY=6p \
         "$tick"FONT_ANNOT_SECONDARY=6p \

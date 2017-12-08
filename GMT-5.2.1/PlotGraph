@@ -4,6 +4,9 @@
 # by Christian Meeßen
 # christian.meessen@gfz-potsdam.de
 # GFZ Potsdam, 2016
+set -e
+setgmt
+gmttest
 
 if [ $# -lt 1 ]
 then
@@ -22,7 +25,7 @@ then
   echo "head <int>    - Number of header lines in input file"
   echo "t <string>    - Plot title. '_' will be replaced with space"
   echo "v             - Verbose output (debug)"
-  echo 
+  echo
   echo "Note that if header lines in the input file start with different"
   echo "characters, i.e. Petrel points with attributes files, you need to define"
   echo "the number of header lines."
@@ -31,7 +34,8 @@ then
 fi
 
 InFile=$1
-column=0,1
+col1=0
+col2=1
 nHeader=''
 verbose='False'
 tlegend='Value'
@@ -70,13 +74,14 @@ xmax=$(gmt gmtselect $InFile $nHeader | gmt gmtinfo -C -o$colxmax)
 ymin=$(gmt gmtselect $InFile $nHeader | gmt gmtinfo -C -o$colymin)
 ymax=$(gmt gmtselect $InFile $nHeader | gmt gmtinfo -C -o$colymax)
 ROI="$xmin/$xmax/$ymin/$ymax"
+echo ROI $ROI
 
-dX=$(bc <<< "scale=2;$xmax - $xmin")
-dY=$(bc <<< "scale=2;$ymax - $ymin")
+dX=$(bc -l <<< "$xmax - $xmin")
+dY=$(bc -l <<< "$ymax - $ymin")
 
 map_width=10
 map_height=10
-scale_dX=$(bc <<< "scale=2;$map_width/2")
+scale_dX=$(bc -l <<< "$map_width/2")
 out_name=$InFile.ps
 out_format='png'
 
@@ -87,8 +92,6 @@ then
     echo "y range [$ymin,$ymax]"
     echo "ROI: $ROI"
 fi
-
-gmt set --FONT_ANNOT_PRIMARY=6p --FONT_ANNOT_SECONDARY=6p --FONT_LABEL=6p --FONT_TITLE=8p,Helvetica-Bold --MAP_ANNOT_OFFSET_PRIMARY=0.1 --MAP_FRAME_PEN=0.5p --MAP_TICK_LENGTH_PRIMARY=0.1
 
 gmt psxy $InFile -i$col1,$col2 -R$ROI -JX$map_width/$map_height -W1p,black -Baf -BWSnE -P > $out_name
 
@@ -108,7 +111,7 @@ png )
 	ftpe='g';;
 esac
 
-gmt ps2raster -A -P -E400 -T$ftpe $out_name
+gmt psconvert -A -P -E400 -T$ftpe $out_name
 
 rm $out_name
 rm gmt.history

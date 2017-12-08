@@ -1,0 +1,14 @@
+#!/bin/bash
+# Default settings for gmt
+
+gmt set --FONT_ANNOT_PRIMARY=6p \
+        --FONT_ANNOT_SECONDARY=6p \
+        --FONT_LABEL=7p \
+        --FONT_TITLE=7p,Helvetica-Bold \
+        --MAP_FRAME_PEN=0.5p \
+        --MAP_LABEL_OFFSET=3p \
+        --MAP_TICK_LENGTH_PRIMARY=1p \
+        --MAP_TICK_LENGTH_SECONDARY=0.5p \
+        --MAP_TITLE_OFFSET=7p \
+        --PS_MEDIA=A4 \
+        --PS_PAGE_ORIENTATION=portrait

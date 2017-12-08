@@ -1,0 +1,84 @@
+#!/bin/sh
+#
+# This script reads XYZ point data and creates an IGMAS+ compatible
+# GoCad TSurf using GMT and AWK
+#
+# Christian Meessen, GFZ Potsdam, 2014
+
+#################################
+## Script configuration
+
+# inFile	Input file name
+# outFile	Output file name
+# color		The color that will be assigned to the Gocad TSurf surface in R G B
+
+FilePath='./Models/Test models/FreeAir/GMT/'
+inFile='1_LITHO_Moho.csv'
+outFile='LITHO_Moho.ts'
+color='0.5 0.5 0.5'
+
+##################################
+# Start of code
+
+## Triangulate the input file
+# S - Output triangles as polygon segments separated by a segment header record
+# Z - Enable xyz input
+
+echo "Triangulate $FilePath$inFile"
+gmt triangulate "$FilePath$inFile" -S -Z > triangulation.dat
+
+# Input file format:
+# > Polygon I-J-K
+# Xi Yi Zi
+# Xj Yj Zj
+# Xk Yk Zk
+# etc.
+
+# Extract triangular network information
+# TRGL_sorted.dat - used to identify vertices from $inFile
+# TRGL_groups.dat - contains triangulation information
+
+awk '($2 == "Polygon") {print $3}' triangulation.dat > TRGL_raw.dat
+awk 'BEGIN {FS = "-"}; {printf "%i\n%i\n%i\n",$1+1,$2+1,$3+1}' TRGL_raw.dat > TRGL_sorted.dat
+awk 'BEGIN {FS = "-"}; {print "TRGL " $1+1,$2+1,$3+1}' TRGL_raw.dat > TRGL_groups.dat
+rm TRGL_raw.dat
+
+# Extract vertices
+awk '($1 != ">") {print $1,$2,$3}' triangulation.dat > vertices.dat
+
+# Merge TRGL_sorted.dat und vertices.dat
+awk '{
+# First File: triangles
+if(NR == FNR){
+	pt_index[FNR] = $1
+}
+# Second File: vertices
+else{
+	printf "%i %f %f %f\n",pt_index[FNR],$1,$2,$3
+}
+}' TRGL_sorted.dat vertices.dat > VRTX_raw.dat
+rm vertices.dat
+rm TRGL_sorted.dat
+
+# Remove duplicates, sort after vertices
+awk ' !($0 in array) { array[$0]; print }' VRTX_raw.dat |sort -n | awk '{printf "VRTX %i %f %f %f\n",$1,$2,$3,$4}' > VRTX.dat
+rm VRTX_raw.dat
+
+# Join VRTX.dat and TRGL_groups.dat into a GoCad File
+printf "GOCAD TSurf 1\n" > header.txt
+printf "Header {\n" >> header.txt
+printf "name: $outFile\n" >> header.txt
+printf "*solid*color: $color 1\n" >> header.txt
+printf "}\n" >> header.txt
+printf "GOCAD_ORIGINAL_COORDINATE_SYSTEM\n" >> header.txt
+printf "NAME: from_Shape\n" >> header.txt
+printf "AXIS_NAME: \"X\" \"Y\" \"Z\"\n" >> header.txt
+printf "AXIS_UNTI: \"m\" \"m\" \"m\"\n" >> header.txt
+printf "END_ORIGINAL_COORDINATE_SYSTEM\n" >> header.txt
+printf "TFACE\n" >> header.txt
+cat header.txt VRTX.dat TRGL_groups.dat  > "$FilePath$outFile"
+
+rm header.txt
+rm VRTX.dat
+rm TRGL_groups.dat
+rm triangulation.dat

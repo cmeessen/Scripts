@@ -1,0 +1,17 @@
+#!/bin/bash
+# Test for gmt version
+
+set -e
+version=`gmt --version`
+VREQ='5.2'
+
+if [[ $# -eq 0 ]]
+then
+    if [[ $version == "$VREQ"* ]]
+    then
+        echo "GMT $VREQ found"
+    else
+        echo "ERROR: GMT $VREQ required, found GMT $version"
+        exit 1
+    fi
+fi

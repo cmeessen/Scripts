@@ -1,8 +1,23 @@
-#!/bin/sh
+#!/bin/bash
 #
 # This script plots a histogram from given x y z values
 #
 # Christian Meessen, GFZ Potsdam, 2014
+set -e
+setgmt
+gmttest
+
+function SplitExp () {
+    # Make output from GMT readable for bc
+    IFS=e read DECIMAL EXPONENT <<< "$1"
+    if [[ "$EXPONENT" != "" ]]
+    then
+        EXPONENT=`echo $EXPONENT | sed 's/-/(-1)*/g'`
+        echo "$DECIMAL*10^($EXPONENT)"
+    else
+        echo $1
+    fi
+}
 
 if [ $# -lt 2 ]
 then
@@ -19,7 +34,7 @@ then
   echo "HeaderLines    - Number of header lines in input file"
   echo
   echo "Plots a histogram of the data in the 3rd column."
-  echo 
+  echo
   echo "Note that if header lines in the input file start with different"
   echo "characters, i.e. Petrel points with attributes files, you need to define"
   echo "the number of header lines."
@@ -50,11 +65,13 @@ fi
 out_name=$FileIn"_hist.ps"
 out_format='png'
 
-zColMin=$(bc <<< "scale=1;($column+1)*2-2")
-zColMax=$(bc <<< "scale=1;($column+1)*2-1")
+zColMin=`bc <<< "scale=1;($column+1)*2-2"`
+zColMax=`bc <<< "scale=1;$zColMin+1"`
 
 zmin=$(gmt gmtinfo $FileIn -C -o$zColMin $nHeader)
 zmax=$(gmt gmtinfo $FileIn -C -o$zColMax $nHeader)
+zmin=`SplitExp $zmin`
+zmax=`SplitExp $zmax`
 
 BinWidth=$(bc <<< "scale=10;($zmax-($zmin))/$nBins")
 
@@ -92,7 +109,7 @@ png )
 	ftpe='g';;
 esac
 
-gmt ps2raster -A -P -E400 -T$ftpe $out_name
+gmt psconvert -A -P -E400 -T$ftpe $out_name
 
 rm colors.cpt gmt.history gmt.conf $out_name *.eps *.bb stdev.tmp 2> /dev/null
 

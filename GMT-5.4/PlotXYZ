@@ -5,12 +5,9 @@
 # christian.meessen@gfz-potsdam.de
 # GFZ Potsdam, 2016
 
-if [ $# -lt 1 ]
-then
+function plothelp(){
   echo
-  echo "Not enough arguments."
-  echo
-  echo "Usage: PlotXYZ InputFile [-col][-c][-head][-I][-R][-t][-U][-v]"
+  echo "Usage: PlotXYZ InputFile [-col][-c][-head][-I][-r][-R][-t][-U][-v][--help]"
   echo "       arguments in [] are optional"
   echo
   echo "col <int>   - If the InputFile contains multiple columns, this"
@@ -19,6 +16,7 @@ then
   echo "c <string>  - Name of the GMT color palette."
   echo "head <int>  - Number of header lines in input file"
   echo "I           - Invert colour scale"
+  echo "r <int>     - The ratio of the y axis with respect to x axis"
   echo "R <ROI>     - Area to plot in GMT -R format xmin/xmax/ymin/ymax"
   echo "U <UTMZONE> - UTM Zone to plot boundaries and rivers, e.g. S20 or N10"
   echo "t <string>  - Title of legend. '_' will be replaced with space"
@@ -29,6 +27,22 @@ then
   echo "the number of header lines."
   echo
   exit
+}
+
+if [ $# -lt 1 ]
+then
+  echo
+  echo "Not enough arguments."
+  echo
+  echo "Usage: PlotXYZ InputFile [-col][-c][-head][-I][-R][-t][-U][-v][--help]"
+  echo "       arguments in [] are optional"
+  echo
+  exit
+fi
+
+if [ "$1" = "--help" ]
+then
+  plothelp
 fi
 
 InFile=$1
@@ -40,7 +54,10 @@ verbose='False'
 tlegend='Value'
 cpt='-Chaxby'
 I=''
+useratio='False'
 shift 1
+
+echo 'Processing '$InFile
 
 # Go through command line options
 while (( "$#" ))
@@ -57,10 +74,17 @@ do
     then
         nHeader="-hi$2"
         shift 2
+    elif [ "$1" = "--help" ]
+    then
+        plothelp
     elif [ "$1" = "-I" ]
     then
         I='-I'
         shift 1
+    elif [ "$1" = "-r" ]
+    then
+        useratio=$2
+        shift 2
     elif [ "$1" = "-R" ]
     then
         UseROI='True'
@@ -123,6 +147,7 @@ fi
 zColMin=$(bc <<< "scale=1;($column+1)*2-2")
 zColMax=$(bc <<< "scale=1;($column+1)*2-1")
 
+echo 'Obtaining file information'
 declare -a fileinfo=(`gmtselect $InFile $ROI $nHeader | gmtinfo -C`)
 xmin=${fileinfo[0]}
 xmax=${fileinfo[1]}
@@ -139,7 +164,12 @@ dZ=$(bc <<< "scale=2;($zmax - $zmin)/20")
 CScale="-T$zmin/$zmax/$dZ"
 
 map_width=10
-map_height=$(bc <<< "scale=2;$dY/$dX*$map_width")
+if [ "$useratio" = "False" ]
+then
+  map_height=$(bc <<< "scale=2;$dY/$dX*$map_width")
+else
+  map_height=$(bc <<< "scale=2;$map_width*$useratio")
+fi
 scale_dX=$(bc <<< "scale=2;$map_width/2")
 out_name=$InFile.ps
 out_format='png'

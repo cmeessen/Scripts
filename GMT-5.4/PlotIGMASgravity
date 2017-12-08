@@ -1,0 +1,222 @@
+#!/bin/bash
+#
+set -e
+
+if [ $# -lt 1 ]
+then
+  echo
+  echo "Not enough arguments."
+  echo
+  echo "Usage: PlotIGMASGravity InputFile [-h][-R][-U]"
+  echo "       Arguments in [] are optional."
+  echo
+  echo "h <int>     - Number of header lines, default 1."
+  echo "R <ROI>     - Area to plot in GMT format xmin/xmax/ymin/ymax"
+  echo "U <UTMZONE> - UTM Zone to plot borders and shorelines, e.g. S20 or N10"
+  echo
+  echo "Plots measured, calculated gravity and residual gravity for csv-station files"
+  echo "from IGMAS+. Columns need to be 'X', 'Y', 'Z', 'measured', 'calculated', 'residual'."
+  echo
+  exit
+fi
+
+InFile=$1
+nHeader='-hi1'
+UseROI='False'
+ROI=''
+utm='False'
+verbose='False'
+tlegend='Value'
+cpt='-Chaxby'
+I=''
+shift 1
+
+# Go through command line options
+while (( "$#" ))
+do
+    if [ "$1" = "-h" ]
+    then
+        nHeader="-hi$2"
+        shift 2
+    elif [ "$1" = "-R" ]
+    then
+        UseROI='True'
+        ROI="-R$2"
+        shift 2
+    elif [ "$1" = "-U" ]
+    then
+        utm='True'
+        utm_hemi=${2:0:1}
+        utm_zone=${2:1}
+        if [[ "$utm_hemi" = "S" ]]
+        then
+            utm_zone="-"$utm_zone
+        elif [[ "$utm_hemi" = "N" ]]
+        then
+            utm_zone="+"$utm_zone
+        else
+            echo "Unknown utm hemisphere: $utm_hemi"
+            exit
+        fi
+        echo "utm_hemi: $utm_hemi"
+        echo "utm_zone: $utm_zone"
+        shift 2
+    else
+        echo "ERROR! Unknown argument $1"
+        echo
+        exit
+    fi
+done
+
+version=`gmt --version`
+tick='--'
+if [[ $version == "5.4"* ]]
+then
+  tick=''
+fi
+
+gmt set "$tick"'COLOR_BACKGROUND=white' \
+        "$tick"FONT_ANNOT_PRIMARY=6p \
+        "$tick"FONT_ANNOT_SECONDARY=6p \
+        "$tick"FONT_LABEL=10p \
+        "$tick"FONT_TITLE=10p,Helvetica-Bold \
+        "$tick"MAP_ANNOT_OFFSET_PRIMARY=0.1 \
+        "$tick"MAP_FRAME_PEN=0.5p \
+        "$tick"MAP_LABEL_OFFSET=1p \
+        "$tick"MAP_TICK_LENGTH_PRIMARY=2p \
+        "$tick"PS_MEDIA=A0
+
+echo 'Extracting file information'
+declare -a fileinfo=(`gmtselect $InFile $ROI $nHeader | gmtinfo -C`)
+echo '>> '${fileinfo[@]}
+xmin=${fileinfo[0]}
+xmax=${fileinfo[1]}
+ymin=${fileinfo[2]}
+ymax=${fileinfo[3]}
+gmeasmin=${fileinfo[6]}
+gmeasmax=${fileinfo[7]}
+gcalcmin=${fileinfo[8]}
+gcalcmax=${fileinfo[9]}
+gresmin=${fileinfo[10]}
+gresmax=${fileinfo[11]}
+
+if [[ "$UseROI" = "False" ]]
+then
+    ROI="-R$xmin/$xmax/$ymin/$ymax"
+fi
+
+echo 'Define map bounds'
+dX=$(bc <<< "scale=2;$xmax - ($xmin)")
+dY=$(bc <<< "scale=2;$ymax - ($ymin)")
+dZ=20
+map_width=8
+map_height=$(bc <<< "scale=2;$dY/$dX*$map_width")
+scale_dX=$(bc <<< "scale=2;$map_width/2")
+out_name=$InFile.ps
+out_format='png'
+map_off=1
+map_offset=$(bc <<< "scale=2;$map_width+$map_off")
+scale_dX=$(bc <<< "scale=2;$map_width+$map_offset/2-$map_width/2")
+scale_dY=$(bc <<< "scale=2;-0.2")
+scale_width=$(bc <<< "scale=2;$map_width")
+
+if [[ "$utm" = "True" ]]
+then
+    echo "Configuring UTM Projection "$utm_zone" "$utm_hemi
+    echo "$xmin $ymin" > ROI_UTM.dat.tmp
+    echo "$xmax $ymax" >> ROI_UTM.dat.tmp
+    mapproject ROI_UTM.dat.tmp -JU$utm_zone/12 -R-1/1/-1/1 -F -C -I > ROI_WGS.dat.tmp
+    readarray ROI_WGS_arr < ROI_WGS.dat.tmp
+    i=0
+    for j in ${ROI_WGS_arr[@]}
+    do
+        ROI_WGS_arr[i]=$(echo $j|tr -d '\n')
+        i=$(bc <<< "scale=0;$i+1")
+    done
+    ROI_WGSr=${ROI_WGS_arr[0]}"/"${ROI_WGS_arr[1]}"/"${ROI_WGS_arr[2]}"/"${ROI_WGS_arr[3]}"r"
+    echo ">> ROI_WGSr: $ROI_WGSr"
+    rm -f ROI_UTM.dat.tmp ROI_WGS.dat.tmp
+fi
+
+echo "Define absolut gravity color scale"
+CScaleAbsMin=$(bc <<< "if ($gmeasmin < ($gcalcmin)) $gmeasmin else $gcalcmin")
+CScaleAbsMax=$(bc <<< "if ($gmeasmax > ($gcalcmax)) $gmeasmax else $gcalcmax")
+CScaleAbs="-T$CScaleAbsMin/$CScaleAbsMax/$dZ"
+echo '>> '$CScaleAbs
+
+echo "Define residual color scale"
+echo $gresmin $gresmax
+zminABS=$(bc <<< "sqrt($gresmin*$gresmin)")
+zmaxABS=$(bc <<< "sqrt($gresmax*$gresmax)")
+CScaleMin=$(bc <<< "if ($zminABS < $zmaxABS) -$zmaxABS else -$zminABS")
+CScaleMax=$(bc <<< "if ($zminABS < $zmaxABS) $zmaxABS else $zminABS")
+# Round to nearest 20
+CScaleMin=`bc <<< "scale=0;($CScaleMin/20-1)*20"`
+CScaleMax=`bc <<< "scale=0;($CScaleMax/20+1)*20"`
+CScale="-T$CScaleMin/$CScaleMax/$dZ"
+
+echo "Plot information"
+echo "x range [$xmin,$xmax]"
+echo "y range [$ymin,$ymax]"
+echo "ROI: $ROI"
+echo "Absolute gz scale: $CScaleAbs"
+echo "Residual gz scale: $CScale"
+echo "Map width $map_width"
+echo "Map height $map_height"
+
+makecpt -Cpolar.cpt $CScale > colors.cpt
+makecpt -Chaxby.cpt $CScaleAbs > colors_abs.cpt
+
+pscoastcmd1="-JU$utm_zone/$map_width -R$ROI_WGSr -A0/2/4 -W0.3p,119/138/159 -Di -N1/1p,50/50/50 -N2/0.25p,100/100/100 -W0.25p,119/138/159 -O -P -K"
+pscoastcmd2="-J -R -A0/0/1 -Di -W0.3p,119/138/159 -O -P -K"
+
+# Map1 - Measured gz
+gmt pscontour $InFile $nHeader -i0,1,3 -Ccolors_abs.cpt -JX$map_width/$map_height $ROI -I -Baf -BWNse+t'Measured gravity field' --MAP_ANNOT_ORTHO -P -K > $out_name
+if [[ "$utm" = "True" ]]
+then
+    gmt pscoast $pscoastcmd1 >> $out_name
+    gmt pscoast $pscoastcmd2 >> $out_name
+fi
+
+# Scale
+gmt psscale -D$scale_dX/$scale_dY/$scale_width/0.5h -Ccolors_abs.cpt -Baf20+l'Gravity / mGal' -Np --FONT_ANNOT_PRIMARY=10p -O -P -K >> $out_name
+
+# Map2 - Calculated gz
+gmt pscontour $InFile $nHeader -i0,1,4 -Ccolors_abs.cpt -JX$map_width/$map_height $ROI -I -Baf -BwNse+t'Calculated gravity field' -X$map_offset -O -P -K >> $out_name
+if [[ "$utm" = "True" ]]
+then
+    gmt pscoast $pscoastcmd1 >> $out_name
+    gmt pscoast $pscoastcmd2 >> $out_name
+fi
+
+# Map 3 - Residual gz
+gmt pscontour $InFile $nHeader -i0,1,5 -Ccolors.cpt -JX$map_width/$map_height $ROI -I -Baf -BwNsE+t'Residual gravity field' --MAP_ANNOT_ORTHO=W -X$map_offset -O -P -K >> $out_name
+scale_dX=$(bc <<< "scale=2;$map_width/2")
+if [[ "$utm" = "True" ]]
+then
+    gmt pscoast $pscoastcmd1 >> $out_name
+    gmt pscoast $pscoastcmd2 >> $out_name
+fi
+gmt psscale -D$scale_dX/$scale_dY/$scale_width/0.5h -Ccolors.cpt -Baf20+l'Gravity residual / mGal' -Np --FONT_ANNOT_PRIMARY=10p -O -P >> $out_name
+
+# Finalisation
+case "$out_format" in
+bmp )
+	ftpe='b';;
+eps )
+	ftpe='e';;
+pdf )
+	ftpe='f';;
+jpg )
+	ftpe='j';;
+png )
+	ftpe='g';;
+* )
+	ftpe='g';;
+esac
+outname=$(echo $out_name | sed -e 's/.ps//g')
+echo "Saving result to: $outname.$out_format"
+gmt ps2raster -A -P -E400 -T$ftpe $out_name
+
+rm $out_name
+rm colors.cpt colors_abs.cpt gmt.history gmt.conf *.eps *.bb 2> /dev/null

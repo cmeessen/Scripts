@@ -1,6 +1,8 @@
 #!/bin/bash
 #
 set -e
+setgmt
+gmttest
 
 if [ $# -lt 1 ]
 then
@@ -68,26 +70,9 @@ do
     fi
 done
 
-version=`gmt --version`
-tick='--'
-if [[ $version == "5.4"* ]]
-then
-  tick=''
-fi
-
-gmt set "$tick"'COLOR_BACKGROUND=white' \
-        "$tick"FONT_ANNOT_PRIMARY=6p \
-        "$tick"FONT_ANNOT_SECONDARY=6p \
-        "$tick"FONT_LABEL=10p \
-        "$tick"FONT_TITLE=10p,Helvetica-Bold \
-        "$tick"MAP_ANNOT_OFFSET_PRIMARY=0.1 \
-        "$tick"MAP_FRAME_PEN=0.5p \
-        "$tick"MAP_LABEL_OFFSET=1p \
-        "$tick"MAP_TICK_LENGTH_PRIMARY=2p \
-        "$tick"PS_MEDIA=A0
-
 echo 'Extracting file information'
 declare -a fileinfo=(`gmtselect $InFile $ROI $nHeader | gmtinfo -C`)
+echo '>> '${fileinfo[@]}
 xmin=${fileinfo[0]}
 xmax=${fileinfo[1]}
 ymin=${fileinfo[2]}
@@ -105,8 +90,8 @@ then
 fi
 
 echo 'Define map bounds'
-dX=$(bc <<< "scale=2;$xmax - ($xmin)")
-dY=$(bc <<< "scale=2;$ymax - ($ymin)")
+dX=$(bc -l <<< "$xmax - ($xmin)")
+dY=$(bc -l <<< "$ymax - ($ymin)")
 dZ=20
 map_width=8
 map_height=$(bc <<< "scale=2;$dY/$dX*$map_width")
@@ -115,8 +100,8 @@ out_name=$InFile.ps
 out_format='png'
 map_off=1
 map_offset=$(bc <<< "scale=2;$map_width+$map_off")
-scale_dX=$(bc <<< "scale=2;$map_width+$map_offset/2-$map_width/2")
-scale_dY=$(bc <<< "scale=2;-0.2")
+scale_dX=$(bc -l <<< "$map_width+$map_offset/2-$map_width/2")
+scale_dY=$(bc -l <<< "-0.2")
 scale_width=$(bc <<< "scale=2;$map_width")
 
 if [[ "$utm" = "True" ]]
@@ -124,7 +109,7 @@ then
     echo "Configuring UTM Projection "$utm_zone" "$utm_hemi
     echo "$xmin $ymin" > ROI_UTM.dat.tmp
     echo "$xmax $ymax" >> ROI_UTM.dat.tmp
-    mapproject ROI_UTM.dat.tmp -JU$utm_zone/12 -R-1/1/-1/1 -F -C -I > ROI_WGS.dat.tmp
+    gmt mapproject ROI_UTM.dat.tmp -JU$utm_zone/12 -R-1/1/-1/1 -F -C -I > ROI_WGS.dat.tmp
     readarray ROI_WGS_arr < ROI_WGS.dat.tmp
     i=0
     for j in ${ROI_WGS_arr[@]}
@@ -138,18 +123,20 @@ then
 fi
 
 echo "Define absolut gravity color scale"
-CScaleAbsMin=$(bc <<< "if ($gmeasmin < ($gcalcmin)) $gmeasmin else $gcalcmin")
-CScaleAbsMax=$(bc <<< "if ($gmeasmax > ($gcalcmax)) $gmeasmax else $gcalcmax")
+CScaleAbsMin=$(bc -l <<< "if ($gmeasmin < ($gcalcmin)) $gmeasmin else $gcalcmin")
+CScaleAbsMax=$(bc -l <<< "if ($gmeasmax > ($gcalcmax)) $gmeasmax else $gcalcmax")
 CScaleAbs="-T$CScaleAbsMin/$CScaleAbsMax/$dZ"
+echo '>> '$CScaleAbs
 
 echo "Define residual color scale"
-zminABS=$(bc <<< "sqrt($gresmin*$gresmin)")
-zmaxABS=$(bc <<< "sqrt($gresmax*$gresmax)")
-CScaleMin=$(bc <<< "if ($zminABS < $zmaxABS) -$zmaxABS else -$zminABS")
-CScaleMax=$(bc <<< "if ($zminABS < $zmaxABS) $zmaxABS else $zminABS")
+echo $gresmin $gresmax
+zminABS=$(bc -l <<< "sqrt($gresmin*$gresmin)")
+zmaxABS=$(bc -l <<< "sqrt($gresmax*$gresmax)")
+CScaleMin=$(bc -l <<< "if ($zminABS < $zmaxABS) -$zmaxABS else -$zminABS")
+CScaleMax=$(bc -l <<< "if ($zminABS < $zmaxABS) $zmaxABS else $zminABS")
 # Round to nearest 20
-CScaleMin=`bc <<< "scale=0;($CScaleMin/20-1)*20"`
-CScaleMax=`bc <<< "scale=0;($CScaleMax/20+1)*20"`
+CScaleMin=`bc -l <<< "scale=0;($CScaleMin/20-1)*20"`
+CScaleMax=`bc -l <<< "scale=0;($CScaleMax/20+1)*20"`
 CScale="-T$CScaleMin/$CScaleMax/$dZ"
 
 echo "Plot information"
@@ -161,8 +148,8 @@ echo "Residual gz scale: $CScale"
 echo "Map width $map_width"
 echo "Map height $map_height"
 
-makecpt -Cpolar.cpt $CScale > colors.cpt
-makecpt -Chaxby.cpt $CScaleAbs > colors_abs.cpt
+gmt makecpt -Cpolar.cpt $CScale > colors.cpt
+gmt makecpt -Chaxby.cpt $CScaleAbs > colors_abs.cpt
 
 pscoastcmd1="-JU$utm_zone/$map_width -R$ROI_WGSr -A0/2/4 -W0.3p,119/138/159 -Di -N1/1p,50/50/50 -N2/0.25p,100/100/100 -W0.25p,119/138/159 -O -P -K"
 pscoastcmd2="-J -R -A0/0/1 -Di -W0.3p,119/138/159 -O -P -K"
@@ -213,7 +200,7 @@ png )
 esac
 outname=$(echo $out_name | sed -e 's/.ps//g')
 echo "Saving result to: $outname.$out_format"
-gmt ps2raster -A -P -E400 -T$ftpe $out_name
+gmt psconvert -A -P -E400 -T$ftpe $out_name
 
 rm $out_name
 rm colors.cpt colors_abs.cpt gmt.history gmt.conf *.eps *.bb 2> /dev/null

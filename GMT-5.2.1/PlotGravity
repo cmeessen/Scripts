@@ -16,6 +16,9 @@
 # by Christian Meeßen
 # christian.meessen@gfz-potsdam.de
 # GFZ Potsdam, 2016
+set -e
+setgmt
+gmttest
 
 if [ $# -lt 1 ]
 then
@@ -48,6 +51,7 @@ column=2
 nHeader=''
 UseROI='False'
 ROI=''
+shift 1
 
 # Go through command line options
 while (( "$#" ))
@@ -97,36 +101,36 @@ zColMin=($column+1)*2-2
 zColMax=($column+1)*2-1
 
 # Get map extent and zvalues
-tmp1=(`gmtselect $InFile $ROI $nHeader | gmtinfo -C`)
+tmp1=( `gmt gmtselect $InFile $ROI $nHeader | gmt gmtinfo -C | sed 's/\t/ /g'` )
 xmin=${tmp1[0]}
 xmax=${tmp1[1]}
 ymin=${tmp1[2]}
 ymax=${tmp1[3]}
 zmin=${tmp1[$zColMin]}
-zmax=${tmp2[$zColMax]}
+zmax=${tmp1[$zColMax]}
 
 if [[ "$UseROI" = "False" ]]
 then
     ROI="-R$xmin/$xmax/$ymin/$ymax"
 fi
 
-dX=$(bc <<< "scale=2;$xmax - $xmin")
-dY=$(bc <<< "scale=2;$ymax - $ymin")
+dX=$(bc -l <<< "$xmax - $xmin")
+dY=$(bc -l <<< "$ymax - $ymin")
 dZ=20
 
 echo "Defining symmetric color scale"
-zminABS=$(bc <<< "sqrt($zmin*$zmin)")
-zmaxABS=$(bc <<< "sqrt($zmax*$zmax)")
-CScaleMin=$(bc <<< "if ($zminABS < $zmaxABS) -$zmaxABS else -$zminABS")
-CScaleMax=$(bc <<< "if ($zminABS < $zmaxABS) $zmaxABS else $zminABS")
+zminABS=$(bc -l <<< "sqrt($zmin*$zmin)")
+zmaxABS=$(bc -l <<< "sqrt($zmax*$zmax)")
+CScaleMin=$(bc -l <<< "if ($zminABS < $zmaxABS) -$zmaxABS else -$zminABS")
+CScaleMax=$(bc -l <<< "if ($zminABS < $zmaxABS) $zmaxABS else $zminABS")
 # Round to nearest 20
 CScaleMin=`bc <<< "scale=0;($CScaleMin/20-1)*20"`
 CScaleMax=`bc <<< "scale=0;($CScaleMax/20+1)*20"`
 CScale="-T$CScaleMin/$CScaleMax/$dZ"
 
 map_width=10
-map_height=$(bc <<< "scale=2;$dY/$dX*$map_width")
-scale_dX=$(bc <<< "scale=2;$map_width/2")
+map_height=$(bc -l <<< "$dY/$dX*$map_width")
+scale_dX=$(bc -l <<< "$map_width/2")
 out_name=$InFile.ps
 out_format='png'
 
@@ -137,19 +141,11 @@ echo "p range [$zmin,$zmax]"
 echo "ROI: $ROI"
 echo "Color scale $CScale"
 
-gmt set --FONT_ANNOT_PRIMARY=6p\
-        --FONT_ANNOT_SECONDARY=6p\
-        --FONT_LABEL=6p\
-        --FONT_TITLE=8p,Helvetica-Bold\
-        --MAP_ANNOT_OFFSET_PRIMARY=0.1\
-        --MAP_FRAME_PEN=0.5p\
-        --MAP_TICK_LENGTH_PRIMARY=0.1
-
-makecpt -Cpolar.cpt $CScale > colors.cpt
-psbasemap $ROI -JX$map_width/$map_height -D$ROI+g'0/0/0/20' -K > $out_name
-pscontour $InFile -i0,1,$column $nHeader -I -Ccolors.cpt -J -R -S -W0.1p,black -A- -K -O >> $out_name
-psbasemap -R -J -Baf -BwNsE --MAP_GRID_CROSS_SIZE_PRIMARY=0p --MAP_ANNOT_ORTHO=W --MAP_TITLE_OFFSET=8p -O -K >> $out_name
-psscale -D$scale_dX/-0.2/$map_width/0.3h -Ccolors.cpt -Baf$dZ+l"Gravity / mGal" -Np --MAP_LABEL_OFFSET=0 -O >> $out_name
+gmt makecpt -Cpolar.cpt $CScale > colors.cpt
+gmt psbasemap $ROI -JX$map_width/$map_height -D$ROI+g'0/0/0/20' -K > $out_name
+gmt pscontour $InFile -i0,1,$column $nHeader -I -Ccolors.cpt -J -R -S -W0.1p,black -A- -K -O >> $out_name
+gmt psbasemap -R -J -Baf -BwNsE --MAP_GRID_CROSS_SIZE_PRIMARY=0p --MAP_ANNOT_ORTHO=W --MAP_TITLE_OFFSET=8p -O -K >> $out_name
+gmt psscale -D$scale_dX/-0.2/$map_width/0.3h -Ccolors.cpt -Baf$dZ+l"Gravity / mGal" -Np --MAP_LABEL_OFFSET=0 -O >> $out_name
 
 case "$out_format" in
 bmp )
@@ -166,7 +162,7 @@ png )
 	ftpe='g';;
 esac
 
-ps2raster -A -P -E400 -T$ftpe $out_name
+gmt psconvert -A -P -E400 -T$ftpe $out_name
 
 rm colors.cpt $out_name gmt.history gmt.conf *.eps *.bb 2> /dev/null
 
