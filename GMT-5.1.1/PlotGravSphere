@@ -1,0 +1,140 @@
+#!/bin/bash
+#
+# This script generates quick-and-dirty plots of input files
+# Usage: PlotXYZ InputFile [PropertyColumn [HeaderLines]]
+#        arguments in [] are optional
+#
+# PropertyColumn - If the InputFile contains multiple columns, this
+#                  defines the column with the value to plot. Columns
+#                  start counting at 0. Default is 2
+# HeaderLines    - Number of header lines in input file
+#
+# Note that if header lines in the input file start with different
+# characters, i.e. Petrel points with attributes files, you need to define
+# the number of header lines.
+#
+# by Christian Meeßen
+# christian.meessen@gfz-potsdam.de
+# GFZ Potsdam, 2016
+set -e
+setgmt
+gmttest
+
+if [ $# -lt 3 ]
+then
+  echo
+  echo "Not enough arguments."
+  echo
+  echo "Usage: PlotGravSphere InputFile LON0 LAT0 [PropertyColumn [HeaderLines]]"
+  echo "       arguments in [] are optional"
+  echo
+  echo "LON0           - Longitude to look at"
+  echo "LAT0           - Latitude to look at"
+  echo "PropertyColumn - If the InputFile contains multiple columns, this"
+  echo "                 defines the column with the value to plot. Columns"
+  echo "                 start counting at 0. Default is 2"
+  echo "HeaderLines    - Number of header lines in input file"
+  echo
+  echo "Plots gravity fields on a sphere with white = 0mGal."
+  echo
+  echo "Note that if header lines in the input file start with different"
+  echo "characters, i.e. Petrel points with attributes files, you need to define"
+  echo "the number of header lines."
+  echo
+  exit
+elif [ $# -eq 3 ]
+then
+  InFile=$1
+  LON0=$2
+  LAT0=$3
+  column=2
+  nHeader=""
+elif [ $# -eq 4 ]
+then
+  InFile=$1
+  LON0=$2
+  LAT0=$3
+  column=$4
+  nHeader=""
+elif [ $# -eq 5 ]
+then
+  InFile=$1
+  LON0=$2
+  LAT0=$3
+  column=$4
+  nHeader="-hi$5"
+else
+  echo "Input arguments: $#"
+fi
+
+# I10 - return -R
+ROI=$(gmt gmtinfo $InFile -I0.1)
+ROID="-Rd"
+#CScale=$(gmt gmtinfo $InFile -T1/$column)
+
+zColMin=$(bc <<< "scale=1;($column+1)*2-2")
+zColMax=$(bc <<< "scale=1;($column+1)*2-1")
+
+tmp1=( `gmt gmtselect $InFile $ROI $nHeader | gmt gmtinfo -C | sed 's/\t/ /g'` )
+xmin=${tmp1[0]}
+xmax=${tmp1[1]}
+ymin=${tmp1[2]}
+ymax=${tmp1[3]}
+zmin=${tmp1[$zColMin]}
+zmax=${tmp1[$zColMax]}
+
+dX=$(bc -l <<< "$xmax-($xmin)")
+dY=$(bc -l <<< "$ymax-($ymin)")
+dZ=$(bc -l <<< "($zmax-($zmin))/20")
+
+CScale="-T$zmin/$zmax/$dZ"
+
+map_width=10
+map_height=$(bc <<< "scale=2;$dY/$dX*$map_width")
+scale_dX=$(bc <<< "scale=2;$map_width/2")
+out_name=$InFile.ps
+out_format='png'
+
+echo "Plot information"
+echo "Lon range [$xmin,$xmax]"
+echo "Lat range [$ymin,$ymax]"
+echo "Gz range [$zmin,$zmax]"
+echo "ROI: $ROI"
+echo "Color scale $CScale"
+
+gmt makecpt -Cpolar.cpt $CScale > colors.cpt
+gmt pscontour $InFile -i0,1,$column $nHeader -I -Ccolors.cpt -JG$LON0/$LAT0/10 -Rg -S -A- -K > $out_name # -W0.1p,black
+#  -A0/2/4
+# D - resolution
+# N - political borders
+# W - shorelines
+#gmt pscoast -J -R -Di -Na/0.5p,black -O -P -K >> $out_name
+gmt pscoast -J -R -A0/0/1 -Di -W0.1p,black -O -P -K >> $out_name
+gmt psbasemap -R -J -Baf -BwNsE --MAP_GRID_CROSS_SIZE_PRIMARY=0p --MAP_ANNOT_ORTHO=W --MAP_TITLE_OFFSET=8p -O -K >> $out_name
+gmt psscale -D$scale_dX/-0.2/$map_width/0.3h -Ccolors.cpt -Baf$dZ+l"Gravity / mGal" -Np --MAP_LABEL_OFFSET=0 -O >> $out_name
+
+case "$out_format" in
+bmp )
+	ftpe='b';;
+eps )
+	ftpe='e';;
+pdf )
+	ftpe='f';;
+jpg )
+	ftpe='j';;
+png )
+	ftpe='g';;
+* )
+	ftpe='g';;
+esac
+
+gmt ps2raster -A -P -E400 -T$ftpe $out_name
+
+rm colors.cpt
+rm $out_name
+rm gmt.history
+rm gmt.conf
+rm *.eps *.bb 2> /dev/null
+
+echo "Done."
+echo "Output file: $InFile.$out_format"

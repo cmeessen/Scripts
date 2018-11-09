@@ -1,0 +1,89 @@
+#!/bin/bash
+#
+# by Christian Meeßen
+# christian.meessen@gfz-potsdam.de
+# GFZ Potsdam, 2016
+set -e
+setgmt
+gmttest
+
+if [ $# -lt 1 ]
+then
+  echo
+  echo "Not enough arguments."
+  echo
+  echo "Usage: PlotNCDF InputFile [-i]"
+  echo "       arguments in [] are optional"
+  echo
+  echo "-i    - Activate grid illumination/"
+  echo
+  echo "Plots a NetCDF file with or without illumination."
+  echo
+  exit
+elif [ $# -eq 1 ]
+then
+  InFile=$1
+  illum='False'
+elif [ $# -eq 2 ]
+then
+  InFile=$1
+  illum='True'
+fi
+
+declare -a tmp=(`grdinfo $InFile -C`)
+xmin=${tmp[1]}
+xmax=${tmp[2]}
+ymin=${tmp[3]}
+ymax=${tmp[4]}
+zmin=${tmp[5]}
+zmax=${tmp[6]}
+ROI=-R$xmin/$xmax/$ymin/$ymax
+dX=`bc -l <<< "$xmax-($xmin)"`
+dY=`bc -l <<< "$ymax-($ymin)"`
+dZ=`bc -l <<< "$zmax-($zmin)"`
+map_width=10
+map_height=`bc <<< "scale=2;$dY/$dX*$map_width"`
+scale_dX=`bc <<< "scale=2;$map_width/2"`
+out_name=$InFile.ps
+out_format='png'
+
+gmt grd2cpt $InFile -Chaxby -E15 > colors.cpt
+
+echo "Plot information"
+echo "x range [$xmin,$xmax]"
+echo "y range [$ymin,$ymax]"
+echo "ROI: $ROI"
+
+if [ "$illum" == "True" ]
+then
+    gmt grdgradient $InFile -Nt1 -A60 -Qt4 -E400 -Gillumination.nc
+    ill='-Iillumination.nc'
+else
+    ill=''
+fi
+
+gmt grdimage $InFile -JX$map_width/$map_height $ROI $ill -Ccolors.cpt -BNsWe -Baf --MAP_ANNOT_ORTHO -K > $out_name
+gmt psscale -D$scale_dX/-0.2/$map_width/0.3h -Ccolors.cpt -Baf+l"Value" -Np -O >> $out_name
+
+case "$out_format" in
+bmp )
+	ftpe='b';;
+eps )
+	ftpe='e';;
+pdf )
+	ftpe='f';;
+jpg )
+	ftpe='j';;
+png )
+	ftpe='g';;
+* )
+	ftpe='g';;
+esac
+
+gmt ps2raster -A -P -E400 -T$ftpe $out_name
+
+rm gmt.history gmt.conf $out_name colors.cpt
+rm *.eps illumination.nc *.bb 2> /dev/null
+
+echo "Done."
+echo "Output file: $InFile.$out_format"
