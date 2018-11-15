@@ -3,29 +3,51 @@
 # by Christian Meeßen
 # christian.meessen@gfz-potsdam.de
 # GFZ Potsdam, 2016
-
+set -e
 if [ $# -lt 1 ]
 then
   echo
   echo "Not enough arguments."
   echo
-  echo "Usage: PlotNCDF InputFile [-i]"
+  echo "Usage: PlotNCDF InputFile [-i][-a][-n]"
   echo "       arguments in [] are optional"
   echo
-  echo "-i    - Activate grid illumination/"
+  echo "Optional Arguments:"
+  echo "    -a  float Azimuth for illumination"
+  echo "    -i        Activate grid illumination"
+  echo "    -n  int   Number of levels in color scale"
   echo
   echo "Plots a NetCDF file with or without illumination."
   echo
   exit
-elif [ $# -eq 1 ]
-then
-  InFile=$1
-  illum='False'
-elif [ $# -eq 2 ]
-then
-  InFile=$1
-  illum='True'
 fi
+
+illum='False'
+azim=155
+n_levels=15
+InFile=$1
+shift 1
+# Go through command line options
+while (( "$#" ))
+do
+    if [ "$1" = "-i" ]
+    then
+        illum='True'
+        shift 1
+    elif [ "$1" = "-n" ]
+    then
+        n_levels=$2
+        shift 2
+    elif [ "$1" = "-a" ]
+    then
+        azim=$2
+        shift 2
+    else
+        echo "ERROR! Unknown argument $1"
+        echo
+        exit
+    fi
+done
 
 declare -a tmp=(`grdinfo $InFile -C`)
 xmin=${tmp[1]}
@@ -44,7 +66,7 @@ scale_dX=`bc <<< "scale=2;$map_width/2"`
 out_name=$InFile.ps
 out_format='png'
 
-grd2cpt $InFile -Chaxby -E15 > colors.cpt
+grd2cpt $InFile -Chaxby -E${n_levels} > colors.cpt
 
 echo "Plot information"
 echo "x range [$xmin,$xmax]"
@@ -67,7 +89,7 @@ gmt set "$tick"FONT_ANNOT_PRIMARY=6p \
 
 if [ "$illum" == "True" ]
 then
-    grdgradient $InFile -Nt1 -A60 -Qt4 -E400 -Gillumination.nc
+    grdgradient $InFile -Nt1 -A${azim} -Gillumination.nc
     ill='-Iillumination.nc'
 else
     ill=''
