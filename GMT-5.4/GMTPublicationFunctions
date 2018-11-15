@@ -1,0 +1,88 @@
+#!/bin/bash
+echo "> GMT Publication functions enabled"
+declare -i MAPREFIDX=0
+declare -a MAPREFS=(a b c d e f g h i j k l m n o p q r s t u v w x y z)
+
+ROI='200000/1000000/6200000/7600000'
+ROI_WGS='-66.263105272/-34.3427286554/-58.1655202812/-21.6662880934r'
+ROI_WGSlarge='-67/-35/-57/-20r'
+
+gmt set COLOR_MODEL rgb \
+        FONT_ANNOT_PRIMARY 6p \
+        FONT_ANNOT_SECONDARY 6p \
+        FONT_LABEL 7p \
+        FONT_TITLE 7p,Helvetica-Bold \
+        MAP_ANNOT_OBLIQUE 32 \
+        MAP_FRAME_PEN 0.5p \
+        MAP_LABEL_OFFSET 3p \
+        MAP_TICK_LENGTH_PRIMARY 3p \
+        MAP_TITLE_OFFSET 7p \
+        PS_MEDIA A4 \
+        PS_PAGE_ORIENTATION portrait \
+        PS_CHAR_ENCODING ISOLatin1+
+
+function plotcorrcoef () {
+    # 1st argument is filename
+    # 2nd argument is column 1
+    # 3rd argument is column 2
+    # 4th argument is ps
+    echo "Calculating R2 for $1"
+    gmtselect $1 -i$2 > col1.tmp
+    gmtselect $1 -i$3 > col2.tmp
+    R2TMP=`gmt gmtmath col1.tmp col2.tmp -C0 CORRCOEFF SQR -Sl -o0 =`
+    R2TMP2=`bc <<<"scale=2;$R2TMP*10/10"`
+    rm col1.tmp col2.tmp
+    echo "R@+2@+ = 0$R2TMP2" | pstext -J -R -Gwhite -C2p -D-2p/2p -W0.5p,black -F+cBR+f6p,Helvetica+jBR -O -K >> $ps
+}
+
+function plotcoast () {
+    # 1st argument map_width
+    # 2nd argument ROI_WGS
+    # 3rd argument ps
+    # 4th argument can be anything
+    gmt pscoast -JU20/$1 -R$2 -Di -N1/0.5p,'100/100/100' -A0/0/1 -W0.5p,'100/100/100' $4 $5 $6 $7 $8 $9 -O -K >> $3
+}
+
+function plotLonLat () {
+    # Required arguments
+    # 1 - map_width
+    # 2 - ROI_WGS
+    # 3 - WSNE+t
+    # 4 - PostScript file
+    # 5 - Anything additional
+    gmt psbasemap -JU20/$1 -R$2 -Baf -B$3 $5 -O -K >> $4
+}
+
+function plotMapRef () {
+    # Arguments
+    # 1 - Anything
+    # psbasemap -J -R -DJTL+jTL+w8p/8p -F+gwhite+p0.5p,black $1 -O -K >> $ps
+    echo ${MAPREFS[$MAPREFIDX]} | pstext -J -R -To -C2p -D2p/-2p -Gwhite -W0.5p,black -F+cTL+f7p,Helvetica-Bold $1 -O -K >> $ps
+    # echo ${MAPREFS[$MAPREFIDX]} | pstext -J -R -To -C2p -D2p/-2p -F+cTL+f7p,Helvetica-Bold $1 -O -K >> $ps
+    MAPREFIDX+=1
+}
+
+function plotYlabel () {
+    # Arguments
+    # 1 -R{ROI}
+    # 2 -J
+    # 3 Text
+    # 4 ps
+    # Replace all / with spaces
+    ROI=${1/-R/}
+    declare -a tmp=(${ROI//\// })
+    if [ "${tmp[-1]: -1}" == "r" ]
+    then
+        xmin=${tmp[0]}
+        ymin=${tmp[1]}
+        xmax=${tmp[2]}
+        ymax=${tmp[3]:0:-1}
+    else
+        xmin=${tmp[0]}
+        xmax=${tmp[1]}
+        ymin=${tmp[2]}
+        ymax=${tmp[3]}
+    fi
+    y=`bc -l <<< "(($ymax)+($ymin))*0.5"`
+    echo "$xmin $y $3" | gmt pstext $1 $2 -F+a90+f12p,Helvetica-Bold -Xa-0.75 -N -O -K >> $4
+}
