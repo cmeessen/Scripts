@@ -148,7 +148,12 @@ zColMin=$(bc <<< "scale=1;($column+1)*2-2")
 zColMax=$(bc <<< "scale=1;($column+1)*2-1")
 
 echo 'Obtaining file information'
-declare -a fileinfo=(`gmtselect $InFile $ROI $nHeader | gmtinfo -C`)
+declare -a fileinfo_raw=(`gmtselect $InFile $ROI $nHeader | gmtinfo -C`)
+declare -a fileinfo=()
+for i in ${fileinfo_raw[@]}
+do
+  fileinfo+=(`echo $i | sed -e 's/[eE]+*/\\*10\\^/'`)
+done
 xmin=${fileinfo[0]}
 xmax=${fileinfo[1]}
 ymin=${fileinfo[2]}
@@ -156,9 +161,9 @@ ymax=${fileinfo[3]}
 zmin=${fileinfo[$zColMin]}
 zmax=${fileinfo[$zColMax]}
 
-dX=$(bc <<< "scale=2;$xmax - $xmin")
-dY=$(bc <<< "scale=2;$ymax - $ymin")
-dZ=$(bc <<< "scale=2;($zmax - $zmin)/20")
+dX=$(bc <<< "scale=2;$xmax - ($xmin)")
+dY=$(bc <<< "scale=2;$ymax - ($ymin)")
+dZ=$(bc <<< "scale=2;($zmax - ($zmin))/20")
 
 
 CScale="-T$zmin/$zmax/$dZ"
@@ -234,7 +239,7 @@ png )
 	ftpe='g';;
 esac
 
-ps2raster -A -P -E400 -T$ftpe $out_name
+psconvert -A -P -E400 -T$ftpe $out_name
 
 rm colors.cpt
 rm $out_name

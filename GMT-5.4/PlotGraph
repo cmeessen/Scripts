@@ -122,7 +122,7 @@ png )
 	ftpe='g';;
 esac
 
-ps2raster -A -P -E400 -T$ftpe $out_name
+psconvert -A -P -E400 -T$ftpe $out_name
 
 rm $out_name
 rm gmt.history

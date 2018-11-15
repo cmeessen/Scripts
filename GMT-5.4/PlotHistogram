@@ -108,7 +108,7 @@ png )
 	ftpe='g';;
 esac
 
-gmt ps2raster -A -P -E400 -T$ftpe $out_name
+gmt psconvert -A -P -E400 -T$ftpe $out_name
 
 rm colors.cpt gmt.history gmt.conf $out_name *.eps *.bb stdev.tmp 2> /dev/null
 

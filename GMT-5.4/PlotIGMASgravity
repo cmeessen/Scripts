@@ -216,7 +216,7 @@ png )
 esac
 outname=$(echo $out_name | sed -e 's/.ps//g')
 echo "Saving result to: $outname.$out_format"
-gmt ps2raster -A -P -E400 -T$ftpe $out_name
+gmt psconvert -A -P -E400 -T$ftpe $out_name
 
 rm $out_name
 rm colors.cpt colors_abs.cpt gmt.history gmt.conf *.eps *.bb 2> /dev/null
