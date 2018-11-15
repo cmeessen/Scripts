@@ -9,28 +9,44 @@ then
   echo
   echo "Not enough arguments."
   echo
-  echo "Usage: PlotNCDF InputFile [-i][-a][-n]"
+  echo "Usage: PlotNCDF InputFile [-i][-a][-n][-cpt][-vcpt]"
   echo "       arguments in [] are optional"
   echo
   echo "Optional Arguments:"
-  echo "    -a  float Azimuth for illumination"
-  echo "    -i        Activate grid illumination"
-  echo "    -n  int   Number of levels in color scale"
+  echo "          Type   Default  Explanation"
+  echo "    -a    float  155      Azimuth for illumination"
+  echo "    -cpt  str    haxby    Name of the color scale to use"
+  echo "    -i                    Activate grid illumination"
+  echo "    -n    int    15       Number of levels in color scale"
+  echo "    -vcpt float float     Min Max of color scale values"
   echo
   echo "Plots a NetCDF file with or without illumination."
   echo
   exit
 fi
 
-illum='False'
+# Default values
 azim=155
+cpt='haxby'
+illum='False'
 n_levels=15
+use_custom_cpt='False'
+
 InFile=$1
 shift 1
+
 # Go through command line options
 while (( "$#" ))
 do
-    if [ "$1" = "-i" ]
+    if [ "$1" = "-a" ]
+    then
+        azim=$2
+        shift 2
+    elif [ "$1" = "-cpt" ]
+    then
+        cpt=$2
+        shift 2
+    elif [ "$1" = "-i" ]
     then
         illum='True'
         shift 1
@@ -38,10 +54,12 @@ do
     then
         n_levels=$2
         shift 2
-    elif [ "$1" = "-a" ]
+    elif [ "$1" = "-vcpt" ]
     then
-        azim=$2
-        shift 2
+        use_custom_cpt='True'
+        cpt_vmin=$2
+        cpt_vmax=$3
+        shift 3
     else
         echo "ERROR! Unknown argument $1"
         echo
@@ -66,7 +84,12 @@ scale_dX=`bc <<< "scale=2;$map_width/2"`
 out_name=$InFile.ps
 out_format='png'
 
-grd2cpt $InFile -Chaxby -E${n_levels} > colors.cpt
+if [ "$use_custom_cpt" = "True" ]
+then
+    makecpt -T${cpt_vmin}/${cpt_vmax}/${n_levels}+ -C${cpt} > colors.cpt
+else
+    grd2cpt $InFile -C${cpt} -E${n_levels} > colors.cpt
+fi
 
 echo "Plot information"
 echo "x range [$xmin,$xmax]"
