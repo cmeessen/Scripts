@@ -10,7 +10,7 @@ gmttest
 
 function plothelp(){
   echo
-  echo "Usage: PlotXYZ InputFile [-col][-c][-head][-I][-r][-R][-t][-U][-v][--help]"
+  echo "Usage: $0 InputFile [-col][-c][-head][-I][-r][-R][-t][-U][-v][--help]"
   echo "       arguments in [] are optional"
   echo
   echo "col <int>   - If the InputFile contains multiple columns, this"

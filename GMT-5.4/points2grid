@@ -1,4 +1,4 @@
-# /bin/bash
+#!/bin/bash
 #
 # This script triangulates given (irregular) XYZ point data and outputs a regular
 # XYZ grid using GMT.
@@ -23,14 +23,14 @@ else
   ymin=$4
   ymax=$5
   gridspacing=$6
-  
+
   echo "$inFile"
   echo "*** Triangulate ***"
   gmt triangulate "$inFile" -R$xmin/$xmax/$ymin/$ymax -I$gridspacing -Gtriangle.grd
-  
+
   echo "*** Convert grid to xyz ***"
   gmt grd2xyz triangle.grd > "$outFile"
-  
+
   echo "*** Cleaning up ***"
   rm gmt.history triangle.grd
   echo "Done!"

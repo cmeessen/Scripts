@@ -1,4 +1,4 @@
-# /bin/bash
+#!/bin/bash
 #
 # This script triangulates given (irregular) XYZ point data on a sphere and
 # outputs a regular Lon Lat Z grid using GMT.
@@ -23,14 +23,14 @@ else
   ymin=$4
   ymax=$5
   gridspacing=$6
-  
+
   echo "$inFile"
   echo "*** Triangulate ***"
   gmt sphinterpolate $inFile -R$xmin/$xmax/$ymin/$ymax -i0,1s-1,2 -I$gridspacing -Gtriangle.grd
-  
+
   echo "*** Convert grid to xyz ***"
   gmt grd2xyz triangle.grd > $outFile
-  
+
   echo "*** Cleaning up ***"
   rm gmt.history
   rm triangle.grd

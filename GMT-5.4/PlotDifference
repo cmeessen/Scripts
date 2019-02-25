@@ -44,7 +44,24 @@ UseHist='False'
 UseROI='False'
 tlegend='Value'
 cpt='haxby'
+netcdf='False'
 shift 2
+
+# Check if the files are netcdf files
+if [ "${File1:(-2)}" = "nc" ] || [ "${File1:(-3)}" = "grd" ]
+then
+  if [ "${File2:(-2)}" = "nc" ] || [ "${File2:(-3)}" = "grd" ]
+  then
+    echo 'Detected NetCDF input'
+    netcdf='True'
+    f1name="${File1}.${RANDOM}"
+    f2name="${File2}.${RANDOM}"
+    grd2xyz ${File1} > ${f1name}
+    grd2xyz ${File2} > ${f2name}
+    File1=${f1name}
+    File2=${f2name}
+  fi
+fi
 
 # Go through command line options
 while (( "$#" ))
@@ -263,5 +280,9 @@ fi
 echo 'Converting'
 psconvert $out_name -A -Tg -Qt4
 
+if [ "${netcdf}" = 'True' ]
+then
+  rm -rf ${File1} ${File2}
+fi
 rm -rf gmt.history gmt.conf $out_name colors.cpt File1ROI.tmp File2ROI.tmp diff.tmp
 rm -rf *.bb *.eps stdev.tmp

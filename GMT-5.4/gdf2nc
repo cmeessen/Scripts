@@ -1,0 +1,47 @@
+#!/bin/bash
+set -e
+
+if [ "$#" -lt 1 ]
+then
+  echo
+  echo "Not enough arguments."
+  echo
+  echo "Usage: gdf2nc grdfile"
+  echo
+  echo "Converts gdf files obtained from ICGEM to NetCDF grids"
+  echo
+  exit 0
+fi
+
+outfile=${1/gdf/nc}
+
+# Obtain number of header lines
+IFS=':'
+declare -a tmp=(`grep -n -m 1 end_of_head $1`)
+n_head=${tmp[0]}
+
+# Obtain gridstep size
+IFS=' '
+declare -a tmp=(`grep -m 1 gridstep $1`)
+declare -a tmp2=(${tmp[@]/E/ })
+gridstep=`bc -l <<< "${tmp2[1]}*10^(${tmp2[2]})"| sed 's/^\./0./'`
+
+# Obtain unit
+declare -a tmp=(`grep -m 1 unit $1`)
+unit=${tmp[1]}
+
+# Obtain functional
+declare -a tmp=(`grep -m 1 functional $1`)
+functional=${tmp[1]}
+
+ROI=`gmtinfo $1 -hi${n_head} -I${gridstep} -i0o-360,1,2`
+infostr="Created from $1 with gdf2nc"
+
+echo "Input      $1"
+echo "> gridstep ${gridstep}"
+echo "> ROI      ${ROI}"
+echo "Converting to ${outfile}"
+xyz2grd $1 -hi${n_head} -i0o-360,1,2 ${ROI} -I${gridstep} -G${outfile} -D+xLongitude+yLatitude+z${unit}+t${functional}+r"'${infostr}'" -fg
+echo "Done!"
+
+rm -f gmt.history
