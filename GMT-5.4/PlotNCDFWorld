@@ -1,27 +1,26 @@
 #!/bin/bash
-#
-# This script generates quick-and-dirty plots of input files
-# Usage: PlotNCDFWorld InputFile [PropertyColumn [HeaderLines]]
-#        arguments in [] are optional
-# 
-# PropertyColumn - If the InputFile contains multiple columns, this
-#                  defines the column with the value to plot. Columns
-#                  start counting at 0. Default is 2
-# HeaderLines    - Number of header lines in input file
-# 
-# Note that if header lines in the input file start with different
-# characters, i.e. Petrel points with attributes files, you need to define
-# the number of header lines.
-#
-# by Christian Meeßen
-# christian.meessen@gfz-potsdam.de
-# GFZ Potsdam, 2016
-
+################################################################################
+#                     Copyright (C) 2017 by Christian Meeßen                   #
+#                                                                              #
+#                        This file is part of GMTScripts.                      #
+#                                                                              #
+#       GMTScripts is free software: you can redistribute it and/or modify     #
+#     it under the terms of the GNU General Public License as published by     #
+#           the Free Software Foundation version 3 of the License.             #
+#                                                                              #
+#      GMTScripts is distributed in the hope that it will be useful, but       #
+#          WITHOUT ANY WARRANTY; without even the implied warranty of          #
+#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU       #
+#                   General Public License for more details.                   #
+#                                                                              #
+#      You should have received a copy of the GNU General Public License       #
+#      along with GMTScripts. If not, see <http://www.gnu.org/licenses/>.      #
+#******************************************************************************#
 if [ $# -lt 1 ]
 then
   echo
   echo "Usage: PlotNCDFWorld InputFile [-i]"
-  echo 
+  echo
   echo "       Optional arguments:"
   echo "           -i    Enable illumination"
   echo

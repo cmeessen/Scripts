@@ -1,10 +1,23 @@
 #!/bin/bash
-#
+################################################################################
+#                     Copyright (C) 2017 by Christian Meeßen                   #
+#                                                                              #
+#                        This file is part of GMTScripts.                      #
+#                                                                              #
+#       GMTScripts is free software: you can redistribute it and/or modify     #
+#     it under the terms of the GNU General Public License as published by     #
+#           the Free Software Foundation version 3 of the License.             #
+#                                                                              #
+#      GMTScripts is distributed in the hope that it will be useful, but       #
+#          WITHOUT ANY WARRANTY; without even the implied warranty of          #
+#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU       #
+#                   General Public License for more details.                   #
+#                                                                              #
+#      You should have received a copy of the GNU General Public License       #
+#      along with GMTScripts. If not, see <http://www.gnu.org/licenses/>.      #
+#******************************************************************************#
 # This script triangulates given (irregular) XYZ point data on a sphere and
 # outputs a regular Lon Lat Z grid using GMT.
-#
-# Christian Meessen
-# GFZ Potsdam, 2016
 
 if [ $# -lt 7 ]
 then
