@@ -1,0 +1,782 @@
+#!/bin/bash
+################################################################################
+#                     Copyright (C) 2017 by Christian Meeßen                   #
+#                                                                              #
+#                        This file is part of GMTScripts.                      #
+#                                                                              #
+#       GMTScripts is free software: you can redistribute it and/or modify     #
+#     it under the terms of the GNU General Public License as published by     #
+#           the Free Software Foundation version 3 of the License.             #
+#                                                                              #
+#      GMTScripts is distributed in the hope that it will be useful, but       #
+#          WITHOUT ANY WARRANTY; without even the implied warranty of          #
+#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU       #
+#                   General Public License for more details.                   #
+#                                                                              #
+#      You should have received a copy of the GNU General Public License       #
+#      along with GMTScripts. If not, see <http://www.gnu.org/licenses/>.      #
+#******************************************************************************#
+# Script to generate profiles from GMS models using GMT
+# set -e <- do not activate this, some GMS tools raise errors when finishing
+gmttest 5.4
+
+if [ $# -lt 5 ]
+  then
+    echo
+    echo "Not enough arguments."
+    echo
+    echo "Usage: GMSProfile InputFile x0 y0 x1 y1 [-z][-c][-ve][-o][-u][-ve]"
+    echo "                  [-vox][-voxt][-t]"
+    echo "       Arguments in [] are optional"
+    echo
+    echo "InputFile           - GMS model (ascii)"
+    echo "x0 y0               - Coordinates of left point"
+    echo "x1 y1               - Coordinates of right point"
+    echo "-c <file>           - GMS color file"
+    echo "-o <file>           - Output file name"
+    echo "-p <file>           - Plot additional interface in the profile as dashed"
+    echo "                      line. Accepts xyz files. Can be used multiple times."
+    echo "-t 'String'         - Title string. Underscore (_) will be replaced"
+    echo "                      with space."
+    echo "-u <UTMZone>        - UTM Zone, e.g. S20 or N20, to plot political"
+    echo "                      boundaries and shorelines"
+    echo "-ve <float>         - Vertical exaggaration"
+    echo "-vox <file>[,<col>] - Voxel that should be plotted as overlay, col ="
+    echo "                      data column (default 3)"
+    echo "-voxt 'String'      - Legend string for voxel information. Underscore"
+    echo "                      (_) will be replaced with space."
+    echo "-voxc 'cscale'      - GMT color scale name for voxel information (haxby)."
+    echo "-z <zmin> <zmax>    - Minimum maxium depth to plot the profile"
+    echo
+    exit
+fi
+
+ThermalModel=$1
+profile_X0=$2
+profile_Y0=$3
+profile_X1=$4
+profile_Y1=$5
+shift 5
+
+profile_Zmin='None'
+profile_Zmax='None'
+colpal='None'
+utm='No'
+printvox='No'
+voxlegend='Value'
+voxcscale='haxby -I'
+vexagg=3
+plottitle="+t${ThermalModel/.dat}"
+filename=$ThermalModel'_profile'
+declare -a addInterf=( )
+
+# Go through command line options
+while (( "$#" ))
+do
+    if [ "$1" = "-z" ]
+    then
+        profile_Zmin=$2
+        profile_Zmax=$3
+        shift 3
+    elif [ "$1" = "-c" ]
+    then
+        colpal=$2
+        shift 2
+    elif [ "$1" = "-ve" ]
+    then
+        vexagg=$2
+        shift 2
+    elif [ "$1" = "-u" ]
+    then
+        utm='Yes'
+        utm_hemi=${2:0:1}
+        utm_zone=${2:1}
+        if [[ "$utm_hemi" = "S" ]]
+        then
+            utm_zone="-"$utm_zone
+        fi
+        shift 2
+    elif [ "$1" = "-t" ]
+    then
+        plottitle="+t"$(echo $2 | sed -e 's/_/ /g')
+        shift 2
+    elif [ "$1" = "-o" ]
+    then
+        filename=$2
+        shift 2
+    elif [ "$1" = "-p" ]
+    then
+        addInterf=( ${addInterf[@]} "$2" )
+        shift 2
+    elif [ "$1" = "-vox" ]
+    then
+        printvox='True'
+        if [[ $2 == *","* ]]
+        then
+            fvox=$(echo $2 | cut -d ',' -f 1)
+            voxcol=$(echo $2 | cut -d ',' -f 2)
+        else
+            fvox=$2
+            voxcol=3
+        fi
+        shift 2
+    elif [ "$1" = "-voxt" ]
+    then
+        voxlegend=$(echo $2 | sed -e 's/_/ /g')
+        shift 2
+    elif [ "$1" = "-voxc" ]
+    then
+        voxcscale=$2
+        shift 2
+    else
+        echo "ERROR! Unknown argument $1"
+        echo
+        exit
+    fi
+done
+
+
+######################################################################
+## Convert line endings if necessary
+######################################################################
+# Windows line endings cause problems with other linux tools
+TestCRLF=$(file $ThermalModel)
+if [[ $TestCRLF == *"CRLF"* ]]
+then
+    echo "\nDetected Windows line ending. Converting to Linux line ending."
+    dos2unix $ThermalModel
+fi
+
+######################################################################
+# Read layers and model properties from GMS Model
+######################################################################
+# The layer information is written to a layers.tmp and is then being loaded
+# to an array
+echo
+echo "Reading GMS Model file $ThermalModel"
+
+echo -n "" > layers.tmp
+nhead=0
+while read -r line
+do
+    if [[ ${line:0:1} = '#' ]]
+    then
+        nhead=$(bc <<< "scale=0;$nhead+1")
+    fi
+    if [[ ${line:0:13} = '# Grid_size: ' ]]
+    then
+        nx=$(echo $line | awk '{print $3}')
+        ny=$(echo $line | awk '{print $5}')
+        nz=$(echo $line | awk '{print $7}')
+    fi
+    if [[ ${line:0:16} = '# Grid_X_range: ' ]]
+    then
+        xmin=$(echo $line | awk '{print $3}')
+        xmax=$(echo $line | awk '{print $5}')
+        #replace CRLF and scientific notation for bc
+        xmin=`echo ${xmin} | sed -e 's/[eE]+*/\\*10\\^/'`
+        xmax=`echo ${xmax} | sed -e 's/[eE]+*/\\*10\\^/'`
+        # Directly test if profile points are inside GMS model
+    fi
+    if [[ ${line:0:16} = '# Grid_Y_range: ' ]]
+    then
+        ymin=$(echo $line | awk '{print $3}')
+        ymax=$(echo $line | awk '{print $5}')
+        #replace CRLF and scientific notation for bc
+        ymin=`echo ${ymin} | sed -e 's/[eE]+*/\\*10\\^/'`
+        ymax=`echo ${ymax} | sed -e 's/[eE]+*/\\*10\\^/'`
+    fi
+    if [[ ${line:0:16} = '# Grid_Z_range: ' ]]
+    then
+        zmin=$(echo $line | awk '{print $3}')
+        zmax=$(echo $line | awk '{print $5}')
+        #replace CRLF and scientific notation for bc
+        zmin=`echo ${zmin} | sed -e 's/[eE]+*/\\*10\\^/'`
+        zmax=`echo ${zmax} | sed -e 's/[eE]+*/\\*10\\^/'`
+    fi
+    if [[ ${line:0:13} = '# LayerName: ' ]]
+    then
+        echo $line | awk '{print $4}' >> layers.tmp
+    fi
+    if [[ ${line:0:1} != '#' ]]
+    then
+        if [[ ${line:0:32} = 'Type: GMS GridPoints bin regular' ]]
+        then
+            echo "ERROR: $ThermalModel is binary. Require ascii file."
+            echo 'Execute MakeModel [Model] -ascii to create an ascii model.'
+            echo
+            exit 1
+        else
+            break
+        fi
+    fi
+done < $ThermalModel
+
+# Remove the last line of ther layers file as the last layer is always Base
+mv layers.tmp layers.tmp.bak
+head -n -1 layers.tmp.bak > layers.tmp
+rm layers.tmp.bak
+
+# Test if profile points are inside GMS model
+testX0=`bc <<< "if ($profile_X0 >= $xmin && $profile_X0 <= $xmax) 0 else 1"`
+testX1=`bc <<< "if ($profile_X1 >= $xmin && $profile_X1 <= $xmax) 0 else 1"`
+testY0=`bc <<< "if ($profile_Y0 >= $ymin && $profile_Y0 <= $ymax) 0 else 1"`
+testY1=`bc <<< "if ($profile_Y1 >= $ymin && $profile_Y1 <= $ymax) 0 else 1"`
+if [ "$testX0" = "1" ]
+then
+    echo "Error: X0 is outside of model bounds."
+    exit
+elif [ "$testX1" = "1" ]
+then
+    echo "Error: X1 is outside of model bounds."
+    exit
+elif [ "$testY0" = "1" ]
+then
+    echo "Error: Y0 is outside of model bounds."
+    exit
+elif [ "$testY1" = "1" ]
+then
+    echo "Error: Y1 is outside of model bounds."
+    exit
+else
+    echo "Profile is within model bounds."
+fi
+
+# Replace profile_Zmin/Zmax if not defined by user
+if [ "$profile_Zmin" = "None" ]
+then
+    profile_Zmin=$zmin
+    profile_Zmax=$zmax
+fi
+
+# Load layers to array
+echo "Loading GMS layers"
+readarray layers < layers.tmp
+rm layers.tmp
+i=0
+for j in ${layers[@]}
+do
+    layers[i]=$(echo $j|tr -d '\n')
+    i=$(bc <<< "scale=0;$i+1")
+done
+
+# Define standard color table if no table given
+delcolpal=True
+if [ "$colpal" = None ]
+then
+    echo 'Defining default GMS color scale'
+    echo "80 138 52" > colors.pal.tmp
+    echo "126 122 58" >> colors.pal.tmp
+    echo "208 152 68" >> colors.pal.tmp
+    echo "202 148 112" >> colors.pal.tmp
+    echo "98 98 98" >> colors.pal.tmp
+    echo "144 108 148" >> colors.pal.tmp
+    echo "210 138 148" >> colors.pal.tmp
+    echo "138 62 54" >> colors.pal.tmp
+    echo "82 70 44" >> colors.pal.tmp
+    echo "178 104 42" >> colors.pal.tmp
+    echo "110 110 110" >> colors.pal.tmp
+    echo "28 98 62" >> colors.pal.tmp
+    echo "100 118 168" >> colors.pal.tmp
+    echo "203 129 67" >> colors.pal.tmp
+    echo "46 124 124" >> colors.pal.tmp
+    echo "56 188 190" >> colors.pal.tmp
+    echo "250 214 214" >> colors.pal.tmp
+    echo "36 22 128" >> colors.pal.tmp
+    echo "92 36 48" >> colors.pal.tmp
+    echo "150 24 114" >> colors.pal.tmp
+    echo "80 138 52" >> colors.pal.tmp
+    echo "126 122 58" >> colors.pal.tmp
+    echo "208 152 68" >> colors.pal.tmp
+    echo "202 148 112" >> colors.pal.tmp
+    echo "98 98 98" >> colors.pal.tmp
+    echo "144 108 148" >> colors.pal.tmp
+    echo "210 138 148" >> colors.pal.tmp
+    echo "138 62 54" >> colors.pal.tmp
+    echo "82 70 44" >> colors.pal.tmp
+    echo "178 104 42" >> colors.pal.tmp
+    echo "110 110 110" >> colors.pal.tmp
+    echo "28 98 62" >> colors.pal.tmp
+    echo "100 118 168" >> colors.pal.tmp
+    echo "203 129 67" >> colors.pal.tmp
+    echo "46 124 124" >> colors.pal.tmp
+    echo "56 188 190" >> colors.pal.tmp
+    echo "250 214 214" >> colors.pal.tmp
+    echo "36 22 128" >> colors.pal.tmp
+    echo "92 36 48" >> colors.pal.tmp
+    echo "150 24 114" >> colors.pal.tmp
+    echo "80 138 52" >> colors.pal.tmp
+    echo "126 122 58" >> colors.pal.tmp
+    echo "208 152 68" >> colors.pal.tmp
+    echo "202 148 112" >> colors.pal.tmp
+    echo "98 98 98" >> colors.pal.tmp
+    echo "144 108 148" >> colors.pal.tmp
+    echo "210 138 148" >> colors.pal.tmp
+    echo "138 62 54" >> colors.pal.tmp
+    echo "82 70 44" >> colors.pal.tmp
+    echo "178 104 42" >> colors.pal.tmp
+    echo "110 110 110" >> colors.pal.tmp
+    echo "28 98 62" >> colors.pal.tmp
+    echo "100 118 168" >> colors.pal.tmp
+    echo "203 129 67" >> colors.pal.tmp
+    echo "46 124 124" >> colors.pal.tmp
+    echo "56 188 190" >> colors.pal.tmp
+    echo "250 214 214" >> colors.pal.tmp
+    echo "36 22 128" >> colors.pal.tmp
+    echo "92 36 48" >> colors.pal.tmp
+    echo "150 24 114" >> colors.pal.tmp
+    echo "80 138 52" >> colors.pal.tmp
+    echo "126 122 58" >> colors.pal.tmp
+    echo "208 152 68" >> colors.pal.tmp
+    echo "202 148 112" >> colors.pal.tmp
+    echo "98 98 98" >> colors.pal.tmp
+    echo "144 108 148" >> colors.pal.tmp
+    echo "210 138 148" >> colors.pal.tmp
+    echo "138 62 54" >> colors.pal.tmp
+    echo "82 70 44" >> colors.pal.tmp
+    echo "178 104 42" >> colors.pal.tmp
+    echo "110 110 110" >> colors.pal.tmp
+    echo "28 98 62" >> colors.pal.tmp
+    echo "100 118 168" >> colors.pal.tmp
+    echo "203 129 67" >> colors.pal.tmp
+    echo "46 124 124" >> colors.pal.tmp
+    echo "56 188 190" >> colors.pal.tmp
+    echo "250 214 214" >> colors.pal.tmp
+    echo "36 22 128" >> colors.pal.tmp
+    echo "92 36 48" >> colors.pal.tmp
+    echo "150 24 114" >> colors.pal.tmp
+    echo "80 138 52" >> colors.pal.tmp
+    echo "126 122 58" >> colors.pal.tmp
+    echo "208 152 68" >> colors.pal.tmp
+    echo "202 148 112" >> colors.pal.tmp
+    echo "98 98 98" >> colors.pal.tmp
+    echo "144 108 148" >> colors.pal.tmp
+    echo "210 138 148" >> colors.pal.tmp
+    echo "138 62 54" >> colors.pal.tmp
+    echo "82 70 44" >> colors.pal.tmp
+    echo "178 104 42" >> colors.pal.tmp
+    echo "110 110 110" >> colors.pal.tmp
+    echo "28 98 62" >> colors.pal.tmp
+    echo "100 118 168" >> colors.pal.tmp
+    echo "203 129 67" >> colors.pal.tmp
+    echo "46 124 124" >> colors.pal.tmp
+    echo "56 188 190" >> colors.pal.tmp
+    echo "250 214 214" >> colors.pal.tmp
+    echo "36 22 128" >> colors.pal.tmp
+    echo "92 36 48" >> colors.pal.tmp
+    echo "150 24 114" >> colors.pal.tmp
+    colpal=colors.pal.tmp
+fi
+
+# Import and convert color tables
+echo "Importing colors"
+colors=()
+while read -r line
+do
+    if [[ ${line:0:1} != '#' ]]
+    then
+        # Use sed to replace space with /
+        col_i=`echo $line | sed -e 's/ /\//g'`
+        colors=(${colors[@]} $col_i)
+    fi
+done < $colpal
+
+# Delete default color table file
+if [ "$delcolpal" = "True" ]
+then
+    rm -rf colors.pal.tmp
+fi
+
+# Format bounds in standard-float notation for GMT to understand them
+echo 'Formatting bounds to standard-float notation'
+xmax=$(bc <<< "scale=0;$xmax")
+xmin=$(bc <<< "scale=0;$xmin")
+ymax=$(bc <<< "scale=0;$ymax")
+ymin=$(bc <<< "scale=0;$ymin")
+echo " > xmin: $xmin"
+echo " > xmax: $xmax"
+echo " > ymin: $ymin"
+echo " > ymax: $ymax"
+
+# Calculate lateral resolution
+echo 'Calculating lateral resolution'
+xinc=$(bc <<< "scale=5;($xmax-($xmin))/($nx-1)")
+
+######################################################################
+## GMT settings
+######################################################################
+gmt set PS_MEDIA A0 \
+        FONT_ANNOT_PRIMARY 10p \
+        FONT_ANNOT_SECONDARY 8p \
+        FONT_LABEL 10p \
+        FONT_TITLE 12p,Helvetica-Bold \
+        MAP_FRAME_PEN 0.5p \
+        MAP_TICK_LENGTH_PRIMARY 3p
+
+
+######################################################################
+## Plot settings
+######################################################################
+ps=$filename.ps
+profile_width=14
+Y_init=50
+
+######################################################################
+## Create NetCDF grids for each layer
+######################################################################
+# The NetCDF grids are required to extract the profile lines
+npoints=$(bc <<< "scale=0;$nx*$ny")
+i=0
+echo 'Creating NetCDF gridfiles'
+echo "> Lateral resolution: $xinc"
+echo "> x range: $xmin $xmax"
+echo "> y range: $ymin $ymax"
+for lay in ${layers[@]}
+do
+    echo ">> $lay"
+    flay=$lay".tmp"
+    # Calculate start and end lines of layer in the GMS model file
+    lstart=$(bc <<< "$nhead+1+$i*$npoints")
+    lend=$(bc <<< "$lstart+$npoints-1")
+    # Extract from GMS model
+    sed -n $lstart','$lend'p' $ThermalModel > $flay
+    gmt xyz2grd $flay -G$lay.nc -i0,1,2 -I$xinc -R$xmin/$xmax/$ymin/$ymax
+    rm $flay
+    i=$(bc <<< "scale=0;$i+1")
+done
+
+## Additional interfaces
+for lay in ${addInterf[@]}
+do
+    echo ">> $lay"
+    gmt triangulate $lay -G$lay.add.nc -i0,1,2 -I$xinc -R$xmin/$xmax/$ymin/$ymax
+done
+
+######################################################################
+## Extract profile interfaces
+######################################################################
+echo 'Extracting horizons'
+echo "> Starting point: $profile_X0, $profile_Y0"
+echo "> End point     : $profile_X1, $profile_Y1"
+
+p0_bot="$profile_X0\t$profile_Y0\t$profile_Zmin"
+p1_bot="$profile_X1\t$profile_Y1\t$profile_Zmin"
+
+## Layers in GMS Model
+for i in ${layers[@]}
+do
+	echo "> $i"
+	echo -e "$p0_bot" > profile_$i.pr
+	# -nl defines linear interpolation between gridpoints
+	gmt grdtrack -G$i.nc -nl -E$profile_X0/$profile_Y0/$profile_X1/$profile_Y1 >> profile_$i.pr
+	echo -e "$p1_bot" >> profile_$i.pr
+    # Calculate distance along profile and store it in column 2
+    awk -v xmin="$profile_X0" -v ymin="$profile_Y0" '{print $1,$2,sqrt(($1-xmin)^2+($2-ymin)^2),$3}' profile_$i.pr > profile_$i.awk.pr
+    rm profile_$i.pr
+done
+
+
+## Additional interfaces
+for i in ${addInterf[@]}
+do
+    echo "> $i"
+    gmt grdtrack -G$i.add.nc -nl -E$profile_X0/$profile_Y0/$profile_X1/$profile_Y1 > $i.profile.add.pr
+    # Calculate distance along profile and store it in column 2
+    awk -v xmin="$profile_X0" -v ymin="$profile_Y0" '{print $1,$2,sqrt(($1-xmin)^2+($2-ymin)^2),$3}' $i.profile.add.pr > $i.profile.add.awk.pr
+    rm $i.profile.add.pr
+done
+
+
+######################################################################
+## Print structural profile
+######################################################################
+
+## Calculate total profile distance
+pdist=$(bc <<< "scale=2;sqrt(($profile_X1-($profile_X0))^2+($profile_Y1-($profile_Y0))^2)")
+
+## Profile height according to vertical exaggaration
+profile_height=$(bc <<< "scale=2;($profile_Zmax-($profile_Zmin))/$pdist*sqrt($profile_width^2)*$vexagg")
+ROI_PROFILE="0/$pdist/$profile_Zmin/$profile_Zmax"
+
+echo 'Initiate profile plot'
+echo "> xmin:           $profile_X0"
+echo "> xmax:           $profile_X1"
+echo "> zmin:           $profile_Zmin"
+echo "> zmax:           $profile_Zmax"
+echo "> Profile width:  $profile_width"
+echo "> Profile height: $profile_height"
+echo "> Vert. exag.:    $vexagg"
+echo "> Profile dist:   $pdist"
+echo "> ROI Profile :   $ROI_PROFILE"
+
+psxy profile_${layers[0]}.awk.pr -R$ROI_PROFILE -JX$profile_width/$profile_height -i2,3 -W0.5p,black -Y$Y_init -P -K > $ps
+echo 'Printing individual interfaces'
+i=0
+for lay in ${layers[@]}
+do
+    echo "> $lay"
+    psxy profile_$lay.awk.pr -R$ROI_PROFILE -JX$profile_width/$profile_height -i2,3 -W0.75p,black -G${colors[i]} -O -P -K >> $ps
+    i=$(bc <<< "scale=0;$i+1")
+done
+
+## Print additional interfaces
+for lay in ${addInterf[@]}
+do
+    echo "> $lay"
+    psxy $lay.profile.add.awk.pr -R$ROI_PROFILE -JX$profile_width/$profile_height -i2,3 -W0.75p,black,- -O -P -K >> $ps
+done
+
+# Plot MSL
+# psxy profile_0.pr -R$ROI_PROFILE -JX$profile_width/$profile_height -W0.5p,grey -O -P -K >> $ps
+
+
+######################################################################
+## Print voxel overlay
+######################################################################
+if [[ "$printvox" == "True" ]]
+then
+    echo "Initiate voxel printing"
+    # Windows line endings cause problems with other linux tools
+    TestCRLF=$(file $fvox)
+    if [[ $TestCRLF == *"CRLF"* ]]
+    then
+        echo "\nDetected Windows line ending. Converting to Linux line ending."
+        dos2unix $fvox
+    fi
+
+    # Extract unique depth values from voxel
+    echo 'Extracting unique z values'
+    awk < $fvox '/^[^#]/ {print $3}' | sort -g | uniq > depthsVOX.tmp
+    readarray depthsVOX < depthsVOX.tmp
+    i=0
+    for j in ${depthsVOX[@]}
+    do
+        depthsVOX[i]=$(echo $j | tr -d '\n')
+        i=$(bc <<< "scale=0;$i+1")
+    done
+    rm depthsVOX.tmp
+
+    # Extract unique X values
+    echo 'Extracting unique x values'
+    awk < $fvox '/^[^#]/ {print $1}' | sort -g | uniq > xVOX.tmp
+    readarray xvalsVOX < xVOX.tmp
+    i=0
+    for j in ${xvalsVOX[@]}
+    do
+        xvalsVOX[i]=$(echo $j | tr -d '\n')
+        i=$(bc <<< "scale=0;$i+1")
+    done
+    rm xVOX.tmp
+
+    # Extract unique Y values
+    echo 'Extracting unique y values'
+    awk < $fvox '/^[^#]/ {print $2}' | sort -g | uniq > yVOX.tmp
+    readarray yvalsVOX < yVOX.tmp
+    i=0
+    for j in ${yvalsVOX[@]}
+    do
+        yvalsVOX[i]=$(echo $j | tr -d '\n')
+        i=$(bc <<< "scale=0;$i+1")
+    done
+    rm yVOX.tmp
+
+    # Determine X and Y resolution
+    xresVOX=$(bc <<< "${xvalsVOX[2]}-(${xvalsVOX[1]})")
+    yresVOX=$(bc <<< "${yvalsVOX[2]}-(${yvalsVOX[1]})")
+    echo "X-resolution: $xresVOX"
+    echo "Y-resolution: $yresVOX"
+
+    # Obtain minima and maxima
+    xminVOX=${xvalsVOX[0]}
+    xmaxVOX=${xvalsVOX[${#xvalsVOX[@]}-1]}
+    yminVOX=${yvalsVOX[0]}
+    ymaxVOX=${yvalsVOX[${#yvalsVOX[@]}-1]}
+    zminVOX=${depthsVOX[0]}
+    zmaxVOX=${depthsVOX[${#depthsVOX[@]}-1]}
+    echo "X range: $xminVOX to $xmaxVOX"
+    echo "Y range: $yminVOX to $ymaxVOX"
+    echo "Z range: $zminVOX to $zmaxVOX"
+
+    echo 'Create grid files for each depth'
+    i=0
+    for z in ${depthsVOX[@]}
+    do
+        gmt gmtselect $fvox -Z$z > xyz.tmp
+        gmt xyz2grd xyz.tmp -G$i".grd" -i0,1,$voxcol -I$xresVOX/$yresVOX -R$xminVOX/$xmaxVOX/$yminVOX/$ymaxVOX
+        i=$(bc <<< "scale=0;$i+1")
+    done
+    rm xyz.tmp
+
+    echo 'Extract profiles'
+    echo -e '' > profile.tmp
+    i=0
+    for z in ${depthsVOX[@]}
+    do
+        echo "> Processing $z"
+        gmt grdtrack -G$i.grd -nl -E$profile_X0/$profile_Y0/$profile_X1/$profile_Y1 > $i.pr
+        # Calculate distance along profile and store it in column 2
+        awk -v xmin="$profile_X0" -v ymin="$profile_Y0" '{print sqrt(($1-xmin)^2+($2-ymin)^2),'$z',$3}' $i.pr > $i.awk.pr
+        cat $i.awk.pr >> profile.tmp
+        rm $i.awk.pr $i.pr $i.grd
+        i=$(bc <<< "scale=0;$i+1")
+    done
+
+    # Obtain value minima and maxima
+    vmin=$(gmt gmtinfo profile.tmp -C -o4)
+    vmax=$(gmt gmtinfo profile.tmp -C -o5)
+
+    echo 'Print profile'
+
+    scale_dX=$(bc <<< "scale=2;sqrt($profile_width^2)/2")
+    scale_dY="-2.3"
+    scale_width=$(bc <<< "scale=2;sqrt($profile_width^2)/2")
+
+    gmt makecpt -T$vmin/$vmax/20 -C$voxcscale > colors.cpt
+    gmt pscontour profile.tmp -R$ROI_PROFILE -JX$profile_width/$profile_height -Ccolors.cpt -I -O -P -K >> $ps
+    gmt psscale -D$scale_dX/$scale_dY/$scale_width/0.5h -Ccolors.cpt -Baf+l"$voxlegend" -Np -O -P -K >> $ps
+    rm colors.cpt profile.tmp
+
+    # Reprint outline of model bodies
+    echo 'Outlining model bodies'
+    i=0
+    for lay in ${layers[@]}
+    do
+        echo "> $lay"
+        gmt psxy profile_$lay.awk.pr -R$ROI_PROFILE -JX$profile_width/$profile_height -i2,3 -W0.75p,black -O -P -K >> $ps
+        i=$(bc <<< "scale=0;$i+1")
+    done
+fi
+
+######################################################################
+## Print basemap
+######################################################################
+basemap_Zmin=$(bc <<< "scale=2;$profile_Zmin/1000")
+basemap_Zmax=$(bc <<< "scale=2;$profile_Zmax/1000")
+basemap_Xmax=$(bc <<< "scale=2;sqrt( ($profile_X1 - $profile_X0)^2 + ($profile_Y1 - $profile_Y0)^2) / 1000" )
+
+gmt psbasemap -R0/$basemap_Xmax/$basemap_Zmin/$basemap_Zmax -JX$profile_width/$profile_height -Bxaf+l'Distance / km' -Bya20f10+cL+l'Elev. MSL / km' -BWeS"$plottitle" --FONT_LABEL=6p -O -P -K >> $ps
+
+echo "0 $basemap_Zmin A" > trace.pr
+echo "$basemap_Xmax $basemap_Zmin B" >> trace.pr
+pstext trace.pr -R0/$basemap_Xmax/$basemap_Zmin/$basemap_Zmax -JX$profile_width/$profile_height -Gwhite -N -O -P -K >> $ps
+
+
+######################################################################
+## Print profile location map
+######################################################################
+echo 'Printing profile location  map'
+offset=1.5
+# Introduce additional offset if voxel legend has been printed
+if [[ "$printvox" == "True" ]]
+then
+    vox_dY="$scale_dY"
+else
+    vox_dY="0"
+fi
+map_width=`bc <<< "scale=2;$profile_width/3"`
+map_height=`bc <<< "scale=2;$map_width*($ymax-($ymin))/($xmax-($xmin))"`
+map_dY=`bc <<< "scale=2;$map_height+$offset-($vox_dY)"`
+echo "> Map width:  $map_width"
+echo "> Map height: $map_height"
+echo "$profile_X0 $profile_Y0 A" > trace.pr
+echo "$profile_X1 $profile_Y1 B" >> trace.pr
+topomin=$(gmt grd2xyz ${layers[0]}.nc | gmt gmtinfo -C -o4)
+echo "> Topo min:   $topomin"
+echo "> Topo max:   $zmax"
+makecpt -Z -Cbathy -G$topomin/0 -N > colors_topo.cpt
+makecpt -Cdem1 -T0/$zmax >> colors_topo.cpt
+grdgradient ${layers[0]}.nc -Gillum.nc -A90 -N1
+grdimage ${layers[0]}.nc -Iillum.nc -JX$map_width/$map_height -R$xmin/$xmax/$ymin/$ymax -Ccolors_topo.cpt -Ya-$map_dY -O -P -K >> $ps
+if [[ "$utm" = "Yes" ]]
+then
+    echo "> Printing coastlines for UTM Zone "$utm_zone" "$utm_hemi
+    echo "$xmin $ymin" > ROI_UTM.dat.tmp
+    echo "$xmax $ymax" >> ROI_UTM.dat.tmp
+    mapproject ROI_UTM.dat.tmp -JU$utm_zone/12 -R-1/1/-1/1 -F -C -I > ROI_WGS.dat.tmp
+    readarray ROI_WGS_arr < ROI_WGS.dat.tmp
+    i=0
+    for j in ${ROI_WGS_arr[@]}
+    do
+        ROI_WGS_arr[i]=$(echo $j|tr -d '\n')
+        i=$(bc <<< "scale=0;$i+1")
+    done
+    ROI_WGSr=${ROI_WGS_arr[0]}"/"${ROI_WGS_arr[1]}"/"${ROI_WGS_arr[2]}"/"${ROI_WGS_arr[3]}"r"
+    echo ">> ROI_WGSr: $ROI_WGSr"
+    pscoast -JU$utm_zone/$map_width -R$ROI_WGSr -A0/2/4 -W0.5p,'119/138/159' -S'165/191/221' -Di -N1/1p,'50/50/50' -N2/0.5p,'100/100/100' -W0.25p,'50/50/50' -BWN -Baf --FONT_ANNOT_PRIMARY=6p -Ya-$map_dY -O -P -K >> $ps
+    pscoast -J -R -A0/0/1 -Di -W0.3p,'119/138/159' -S'165/191/221' -Ya-$map_dY -O -P -K >> $ps
+    psbasemap -JX$map_width/$map_height -R$xmin$/$xmax/$ymin/$ymax -BSE -Baf --MAP_ANNOT_ORTHO=W --FONT_ANNOT_PRIMARY=6p -Ya-$map_dY -O -P -K >> $ps
+    rm -f ROI_UTM.dat.tmp ROI_WGS.dat.tmp
+else
+    psbasemap -JX$map_width/$map_height -R$xmin$/$xmax/$ymin/$ymax -BWnSe -Baf --MAP_ANNOT_ORTHO --FONT_ANNOT_PRIMARY=6p -Ya-$map_dY -O -P -K >> $ps
+fi
+psxy trace.pr -JX$map_width/$map_height -R$xmin/$xmax/$ymin/$ymax -W2p,black -Ya-$map_dY -O -P -K >> $ps
+pstext trace.pr -JX$map_width/$map_height -R$xmin/$xmax/$ymin/$ymax -Gwhite -N -Ya-$map_dY -O -P -K >> $ps
+
+######################################################################
+## Print color scale
+######################################################################
+echo '> Color scale'
+scale_dX=0.5
+scale_dY=`bc <<< "scale=2;-1*($vox_dY)/2"`
+scale_height=$map_height
+scale_width=0.5
+echo '>> scale_dX: '$scale_dX
+echo '>> scale_dY: '$scale_dY
+psscale -DJBR+w$scale_height/$scale_width+jBL+o$scale_dX/$scale_dY -R -J -Ccolors_topo.cpt -Baf+l"Elevation / ma.s.l." -Np -Ya-$map_dY -O -P -K --FONT_ANNOT_PRIMARY=6p --FONT_LABEL=6p >> $ps
+
+
+######################################################################
+## Print legend
+######################################################################
+legend_dX=$(bc <<< "scale=2;$scale_dX+$scale_width+2")
+legend_dY=0
+legend_width=$(bc <<< "scale=2;sqrt($profile_width^2)-$legend_dX")
+legend_width=5
+echo 'Creating legend'
+echo '> legend_width: '$legend_width
+echo 'N 1' > legend.leg
+echo 'T Legend' >> legend.leg
+echo 'G 0.5' >> legend.leg
+i=0
+for lay in ${layers[@]}
+do
+    echo "> $lay"
+    echo "S 0 s 0.4 "${colors[i]}" 0.5p,black 0.25 "$lay >> legend.leg
+    i=$(bc <<< "scale=0;$i+1")
+done
+echo 'G 0.5' >> legend.leg
+echo 'T Vertical exaggeration: '$vexagg'x' >> legend.leg
+pslegend legend.leg -DJTR+w$legend_width+jTL+o$legend_dX/$legend_dY --FONT_ANNOT_PRIMARY=8p -Ya-$map_dY -R -J -O -P >> $ps
+
+
+######################################################################
+## Conversion
+######################################################################
+echo "Converting ps"
+psconvert $ps -A -Tg -Qt4 -Qg4 -Z
+echo "> Done!"
+outname=$(echo $ps | sed -e 's/.ps//g')
+echo "Output: $outname.png/.pdf"
+echo
+
+
+######################################################################
+## Clean up
+######################################################################
+
+rm -rf gmt.history gmt.conf colors_topo.cpt
+
+# Clean up layer files
+for lay in ${layers[@]}
+do
+    rm $lay.nc profile_$lay.awk.pr
+done
+
+# Clean up additional layer files
+for lay in ${addInterf[@]}
+do
+    rm $lay.add.nc $lay.profile.add.awk.pr
+done
+
+# Clean up other files
+rm -f legend.leg profile_0.pr trace.pr illum.nc *.bb
