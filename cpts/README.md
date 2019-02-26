@@ -4,12 +4,12 @@
 
 ## wiki-1.02
 
-![wiki-1.02](./wiki-1.02.png)
+![wiki-1.02](./img/wiki-1.02.png)
 
 [Source](http://soliton.vm.bytemark.co.uk/pub/cpt-city/wkp/template/tn/wiki-1.02.png.index.html)
 
 ## afrikakarte
 
-![afrikakarte](./afrikakarte.png)
+![afrikakarte](./img/afrikakarte.png)
 
 [Source](http://soliton.vm.bytemark.co.uk/pub/cpt-city/wkp/lilleskut/tn/afrikakarte.png.index.html)
