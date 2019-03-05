@@ -154,13 +154,13 @@ echo 'Plotting '$InFile
 
 if [ "$UseROI" = "False" ]
 then
-    ROI=$(gmtinfo $InFile -I0.1b $nHeader)
+    ROI=$(gmt gmtinfo $InFile -I0.1b $nHeader)
 fi
 zColMin=$(bc <<< "scale=1;($column+1)*2-2")
 zColMax=$(bc <<< "scale=1;($column+1)*2-1")
 
 echo 'Obtaining file information'
-declare -a fileinfo_raw=(`gmtselect $InFile $ROI $nHeader | gmtinfo -C`)
+declare -a fileinfo_raw=(`gmt gmtselect $InFile $ROI $nHeader | gmt gmtinfo -C`)
 declare -a fileinfo=()
 for i in ${fileinfo_raw[@]}
 do
@@ -206,7 +206,7 @@ then
     echo "Configuring UTM Projection "$utm_zone" "$utm_hemi
     echo "$xmin $ymin"  > ROI_UTM.dat.tmp
     echo "$xmax $ymax" >> ROI_UTM.dat.tmp
-    mapproject ROI_UTM.dat.tmp -JU$utm_zone/12 -R-1/1/-1/1 -F -C -I > ROI_WGS.dat.tmp
+    gmt mapproject ROI_UTM.dat.tmp -JU$utm_zone/12 -R-1/1/-1/1 -F -C -I > ROI_WGS.dat.tmp
     readarray ROI_WGS_arr < ROI_WGS.dat.tmp
     i=0
     for j in ${ROI_WGS_arr[@]}
@@ -223,18 +223,18 @@ then
     # echo pscoast2: $pscoastcmd2
 fi
 
-makecpt $cpt $I $CScale > colors.cpt
-pscontour $InFile -i0,1,$column $nHeader -I -Ccolors.cpt -JX$map_width/$map_height $ROI -S -W0.1p,black -A- -K > $out_name
+gmt makecpt $cpt $I $CScale > colors.cpt
+gmt pscontour $InFile -i0,1,$column $nHeader -I -Ccolors.cpt -JX$map_width/$map_height $ROI -S -W0.1p,black -A- -K > $out_name
 if [[ "$utm" = "True" ]]
 then
-    pscoast $pscoastcmd1 >> $out_name
-    pscoast $pscoastcmd2 >> $out_name
-    psbasemap -R$ROI_WGSr -JU$utm_zone/$map_width -Baf -BWS --MAP_ANNOT_ORTHO=W -O -K >> $out_name
-    psbasemap $ROI -JX$map_width/$map_height -Baf -BNE --MAP_ANNOT_ORTHO=W -O -K >> $out_name
+    gmt pscoast $pscoastcmd1 >> $out_name
+    gmt pscoast $pscoastcmd2 >> $out_name
+    gmt psbasemap -R$ROI_WGSr -JU$utm_zone/$map_width -Baf -BWS --MAP_ANNOT_ORTHO=W -O -K >> $out_name
+    gmt psbasemap $ROI -JX$map_width/$map_height -Baf -BNE --MAP_ANNOT_ORTHO=W -O -K >> $out_name
 else
-    psbasemap $ROI -JX$map_width/$map_height -Baf -BwsNE --MAP_ANNOT_ORTHO=W -O -K >> $out_name
+    gmt psbasemap $ROI -JX$map_width/$map_height -Baf -BwsNE --MAP_ANNOT_ORTHO=W -O -K >> $out_name
 fi
-psscale -D$scale_dX/-0.2/$map_width/0.3h -Ccolors.cpt -Baf$dZ+l"$tlegend" -Np --MAP_LABEL_OFFSET=0 -O >> $out_name
+gmt psscale -D$scale_dX/-0.2/$map_width/0.3h -Ccolors.cpt -Baf$dZ+l"$tlegend" -Np --MAP_LABEL_OFFSET=0 -O >> $out_name
 
 case "$out_format" in
 bmp )
@@ -251,7 +251,7 @@ png )
 	ftpe='g';;
 esac
 
-psconvert -A -P -E400 -T$ftpe $out_name
+gmt psconvert -A -P -E400 -T$ftpe $out_name
 
 rm colors.cpt
 rm $out_name
