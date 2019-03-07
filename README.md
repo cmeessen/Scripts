@@ -1,2 +1,3 @@
-# GMTScripts
-A bunch of quick-and-dirty bash scripts to plot data with GMT
+# Scripts
+
+A collection of scripts that I wrote during my PhD.
