@@ -1,3 +1,3 @@
 # Scripts
 
-A collection of scripts that I wrote during my PhD.
+A collection of scripts and other stuff
