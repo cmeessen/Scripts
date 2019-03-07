@@ -944,103 +944,119 @@ def print_mat_info(mat, ax=None):
         thetable.set_fontsize('small')
         return thetable
 
-mat_dbase = sorted(materials(), key=lambda k:k['name'] )
+def compute_dsigma(mat, z, T, strain_rate):
+    """
+    Compute differential stress for a given material at depths z and
+    temperatures T. Comptues for both compression and extension and
+    therefore the output depths array is a concatenation of z:z[::-1].
 
-geotherm = np.loadtxt('./McKenzieetal2005_Fig4_Geotherm.csv',  skiprows=1, delimiter=',')
-geotherm[:, 0] *= 1000
-geotherm[:, 1] += 273
+    Parameters
+    ----------
+    mat : dict
+        Dict of type as defined in def materials()
+    z : np.array
+        1D array of increasing depth values in positive m
+    T : np.array
+        1D array of same shape as z with T in Kelvin
+    strain_rate : float
+        Strain rate in 1/s
 
-strain_rate = 1e-16
-#moho_depth = 40e3
-LAB_depth = 150e3
-#T_surf = 273
-#T_asthenosphere = 1350 + 273
-#T_grad_crust = 450./moho_depth # K/m
-num_points = 1000
+    Returns
+    -------
+    dsigma : np.array
+        1D array with computed differential stress.
+    depths : np.array
+        1D array with corresponding depth values
+    """
+    s_d_c = np.empty_like(z)              # Diff. stress for compression
+    s_d_e = np.empty_like(z)              # Diff. stress for extension
+    for i in range(z.shape[0]):
+        s_d_c[i] = -1*sigma_d(mat, z[i], T[i], strain_rate=strain_rate,
+                              mode='compression')
+        s_d_e[i] = sigma_d(mat, z[i], T[i], strain_rate=strain_rate,
+                           mode='extension')
+    dsigma = np.concatenate((s_d_c, s_d_e[::-1]))
+    depths = np.concatenate((z, z[::-1]))
+    return dsigma, depths
 
-xmin = -4.5
-xmax = 1.5
+if __name__ == "__main__":
+    mat_dbase = sorted(materials(), key=lambda k:k['name'] )
 
-ymax = 100.0
-ymin = 0.0
+    geotherm = np.loadtxt('./McKenzieetal2005_Fig4_Geotherm.csv',
+                          skiprows=1, delimiter=',')
+    geotherm[:, 0] *= 1000
+    geotherm[:, 1] += 273
 
-zs = np.linspace(0, ymax*1000, num=num_points)
-T = np.interp(zs, geotherm[:,0], geotherm[:,1])
-#T_moho = T_surf + T_grad_crust*moho_depth
-#T_grad_mantle = (T_asthenosphere - T_moho)/(LAB_depth - moho_depth)
-#z_moho = np.where(zs<=moho_depth)[0][-1]
-#T = np.zeros_like(zs)
-#T[0:z_moho] = T_surf + T_grad_crust*zs[0:z_moho]
-#T[z_moho:] = T_moho + T_grad_mantle*(zs[z_moho:]-moho_depth)
+    strain_rate = 1e-16
+    num_points = 1000
 
-import matplotlib.gridspec as gridspec
-gs = gridspec.GridSpec(1, 2)
+    xmin = -4.5
+    xmax = 1.5
 
-#fig = plt.figure(figsize=(8,10), tight_layout=True)
-fig = plt.figure()
-gs0 = gridspec.GridSpec(1,2, width_ratios=[1,1])
-gs0left = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=gs0[0])
-gs0right = gridspec.GridSpecFromSubplotSpec(2, 1, subplot_spec=gs0[1],
-                                            height_ratios=[1,0.9])
+    ymax = 100.0   # Max. depth in km
+    ymin = 0.0     # Min. depth in km
 
-ax = plt.Subplot(fig, gs0left[0])
-fig.add_subplot(ax)
-ax2 = ax.twiny()
+    zs = np.linspace(0, ymax*1000, num=num_points)
+    T = np.interp(zs, geotherm[:,0], geotherm[:,1])
 
-ax_table = plt.Subplot(fig, gs0right[1])
-ax_table.set_axis_off()
-fig.add_subplot(ax_table)
+    import matplotlib.gridspec as gridspec
+    gs = gridspec.GridSpec(1, 2)
 
-labels = []
-lines = []
-matlist = []
-labeld = dict()
+    #fig = plt.figure(figsize=(8,10), tight_layout=True)
+    fig = plt.figure()
+    gs0 = gridspec.GridSpec(1,2, width_ratios=[1,1])
+    gs0left = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=gs0[0])
+    gs0right = gridspec.GridSpecFromSubplotSpec(2, 1, subplot_spec=gs0[1],
+                                                height_ratios=[1,0.9])
 
-# Plot a vertical line at 0GPa
-ax.plot([0,0], [ymin, ymax], lw=1, c='black', alpha=0.5)
+    ax = plt.Subplot(fig, gs0left[0])
+    fig.add_subplot(ax)
+    ax2 = ax.twiny()
 
-n=0 # For colours
-nmax=len(mat_dbase)
-for mat in mat_dbase:
-    matlist.append(mat)
-    label = mat['name'] + ', ' + mat['source']
-    labeld[label] = n
-    s_d_c = np.empty_like(zs)              # Diff. stress for compression
-    s_d_e = np.empty_like(zs)              # Diff. stress for extension
-    c = plt.cm.nipy_spectral(n*1.0/nmax)   # Colour index
-    for i in range(zs.shape[0]):
-        s_d_c[i] = -1*sigma_d(mat, zs[i], T[i], strain_rate=strain_rate, mode='compression')
-        s_d_e[i] = sigma_d(mat, zs[i], T[i], strain_rate=strain_rate, mode='extension')
-    sigma_plot = np.concatenate((s_d_c, s_d_e[::-1]))
-    z_plot = np.concatenate((zs, zs[::-1]))
-    lines.append(ax.plot(sigma_plot/1e9, z_plot/1000, label=label, c=c)[0])
-    n+=1
+    ax_table = plt.Subplot(fig, gs0right[1])
+    ax_table.set_axis_off()
+    fig.add_subplot(ax_table)
 
-ax.set_xlabel('Strength / GPa')
-ax.set_ylabel('Depth / km')
-ax.set_xlim(xmin, xmax)
-ax.set_ylim(ymax, ymin)
-#plt.gca().invert_yaxis()
+    labels = []
+    lines = []
+    matlist = []
+    labeld = dict()
 
-ax2.plot(T-273, zs/1000, linestyle="--")
-ax2.set_xlabel('Temperature / $^\circ$C')
-ax2.set_xlim(0,1350)
+    # Plot a vertical line at 0GPa
+    ax.plot([0,0], [ymin, ymax], lw=1, c='black', alpha=0.5)
 
-leg = ax.legend(loc='upper left', bbox_to_anchor=(1,1),
-                prop={'size': 'small'},
-                title='Click on the line to toggle visibility')
+    n=0 # For colours
+    nmax=len(mat_dbase)
+    for mat in mat_dbase:
+        matlist.append(mat)
+        label = mat['name'] + ', ' + mat['source']
+        labeld[label] = n
+        c = plt.cm.nipy_spectral(n*1.0/nmax)   # Colour index
+        sigma_plot, z_plot = compute_dsigma(mat, zs, T, strain_rate)
+        lines.append(ax.plot(sigma_plot/1e9, z_plot/1000, label=label, c=c)[0])
+        n+=1
 
-if True:
-    # Make an input box
+    ax.set_xlabel('Strength / GPa')
+    ax.set_ylabel('Depth / km')
+    ax.set_xlim(xmin, xmax)
+    ax.set_ylim(ymax, ymin)
+
+    ax2.plot(T-273, zs/1000, linestyle="--")
+    ax2.set_xlabel('Temperature / $^\circ$C')
+    ax2.set_xlim(0,1350)
+
+    leg = ax.legend(loc='upper left', bbox_to_anchor=(1,1),
+                    prop={'size': 'small'},
+                    title='Click on the line to toggle visibility')
+
+    # Make the buttons and input box
     def submit(text):
         strain_rate = float(text)
         print 'Recomputing strength for strain rate', strain_rate
         for i in range(len(lines)):
             mat = matlist[i]
-            s_d = np.zeros_like(zs)
-            for j in range(zs.shape[0]):
-                s_d[j] = sigma_d(mat, zs[j], T[j], strain_rate=strain_rate, mode='compression')*1e-9
-            lines[i].set_xdata(s_d)
+            sigma_plot, z_plot = compute_dsigma(mat, zs, T, strain_rate)
+            lines[i].set_xdata(sigma_plot*1e-9)
         plt.draw()
     axbox = plt.axes([0.8, 0.8, 0.1, 0.05])
     text_box = mpl.widgets.TextBox(axbox, 'Strain rate', initial='1e-16')
@@ -1099,62 +1115,60 @@ if True:
     button_ext = mpl.widgets.Button(ax_ext, 'Only extension')
     button_ext.on_clicked(toggle_extension)
 
-
-
-# Make the clickable legend
-# legline - the line object in the legend
-# origline - the line object in the plot window
-lined = dict()
-for legline, origline in zip(leg.get_lines(), lines):
-    legline_width=8
-    legline_picker=int(0.5*legline_width)
-    legline.set_linewidth(legline_width)
-    legline.set_picker(legline_picker) # 5pts tolerance
-    lined[legline] = origline
-    origline.set_visible(False)
-    legline.set_alpha(0.2)
-
-def onpick_legend(event):
-    # on the pick event, find the orig line corresponding to the
-    # legend proxy line, and toggle the visibility
-    global the_table
-    legline = event.artist
-    origline = lined[legline]
-    vis = not origline.get_visible()
-    origline.set_visible(vis)
-    # Change the alpha on the line in the legend so we can see what lines
-    # have been toggled
-    if vis:
-        legline.set_alpha(1.0)
-        # Also print info
-        mat_idx = labeld[origline.get_label()]
-        if 'the_table' in globals():
-            print 'deleting table'
-            the_table.remove()
-            del the_table
-            fig.canvas.draw()
-        the_table = print_mat_info(mat_dbase[mat_idx], ax_table)
-    else:
-        if 'the_table' in globals():
-            print 'deleting table'
-            the_table.remove()
-            del the_table
-            fig.canvas.draw()
+    # Make the clickable legend
+    # legline - the line object in the legend
+    # origline - the line object in the plot window
+    lined = dict()
+    for legline, origline in zip(leg.get_lines(), lines):
+        legline_width=8
+        legline_picker=int(0.5*legline_width)
+        legline.set_linewidth(legline_width)
+        legline.set_picker(legline_picker) # 5pts tolerance
+        lined[legline] = origline
+        origline.set_visible(False)
         legline.set_alpha(0.2)
-    fig.canvas.draw()
 
-fig.canvas.mpl_connect('pick_event', onpick_legend)
-fig.canvas.set_window_title('Rheology explorer')
-plt.subplots_adjust(top=0.925,
-                    bottom=0.07,
-                    left=0.065,
-                    right=0.75,
-                    hspace=0.2,
-                    wspace=0.2)
-# If manager is wxmanager
-#mng = plt.get_current_fig_manager()
-#mng.frame.Maximize(True)
-# For QT
-#figManager = plt.get_current_fig_manager()
-#figManager.window.showMaximized()
-plt.show()
+    def onpick_legend(event):
+        # on the pick event, find the orig line corresponding to the
+        # legend proxy line, and toggle the visibility
+        global the_table
+        legline = event.artist
+        origline = lined[legline]
+        vis = not origline.get_visible()
+        origline.set_visible(vis)
+        # Change the alpha on the line in the legend so we can see what lines
+        # have been toggled
+        if vis:
+            legline.set_alpha(1.0)
+            # Also print info
+            mat_idx = labeld[origline.get_label()]
+            if 'the_table' in globals():
+                print 'deleting table'
+                the_table.remove()
+                del the_table
+                fig.canvas.draw()
+            the_table = print_mat_info(mat_dbase[mat_idx], ax_table)
+        else:
+            if 'the_table' in globals():
+                print 'deleting table'
+                the_table.remove()
+                del the_table
+                fig.canvas.draw()
+            legline.set_alpha(0.2)
+        fig.canvas.draw()
+
+    fig.canvas.mpl_connect('pick_event', onpick_legend)
+    fig.canvas.set_window_title('Rheology explorer')
+    plt.subplots_adjust(top=0.925,
+                        bottom=0.07,
+                        left=0.065,
+                        right=0.75,
+                        hspace=0.2,
+                        wspace=0.2)
+    # If manager is wxmanager
+    #mng = plt.get_current_fig_manager()
+    #mng.frame.Maximize(True)
+    # For QT
+    #figManager = plt.get_current_fig_manager()
+    #figManager.window.showMaximized()
+    plt.show()
