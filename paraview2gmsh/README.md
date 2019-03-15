@@ -2,6 +2,14 @@
 
 Converts profiles obtained in ParaView to gmsh for further usage e.g. in Lynx or Golem. Written in Python3.
 
+> **IMPORTANT:**
+> currently the script only supports profiles parallely to the y-axis!
+
+**Todo**
+  - add support for arbitrary profile directions
+  - implement physical lines for side boundary conditions
+  - command line support
+
 ## Prerequisites
 
 Requires [Gmsh](http://gmsh.info/) and [pygmsh](https://github.com/nschloe/pygmsh).
@@ -45,3 +53,6 @@ process(layers, BCs, lcar, geo, vscale=10)
 Generates the output `example.geo`. Opening and meshing in Gmsh then results in
 
 ![Gmesh result](./img/result_gmsh.png)
+
+This mesh contains a physical line `Top` at the top and `Bottom` at the base.
+They can diretly be referenced in moose configuration files.
