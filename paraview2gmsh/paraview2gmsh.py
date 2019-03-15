@@ -1,3 +1,20 @@
+################################################################################
+#                     Copyright (C) 2019 by Christian Meeßen                   #
+#                                                                              #
+#                        This file is part of GMTScripts.                      #
+#                                                                              #
+#       GMTScripts is free software: you can redistribute it and/or modify     #
+#     it under the terms of the GNU General Public License as published by     #
+#           the Free Software Foundation version 3 of the License.             #
+#                                                                              #
+#      GMTScripts is distributed in the hope that it will be useful, but       #
+#          WITHOUT ANY WARRANTY; without even the implied warranty of          #
+#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU       #
+#                   General Public License for more details.                   #
+#                                                                              #
+#      You should have received a copy of the GNU General Public License       #
+#      along with GMTScripts. If not, see <http://www.gnu.org/licenses/>.      #
+################################################################################
 import pygmsh as pg
 import numpy as np
 from collections import OrderedDict
@@ -5,7 +22,7 @@ from collections import OrderedDict
 """
 Converts a profile obtained in ParaView to a GMSH *geo file. Requires pygmsh.
 
-IMPORTANT: Currently only works for x=const, i.e. parallely to y-axis. See 
+IMPORTANT: Currently only works for x=const, i.e. parallely to y-axis. See
 TODO.
 """
 
@@ -117,4 +134,3 @@ def process(layers, BCs, lcar, geo, vscale=1):
 
 if __name__ ==  '__main__':
     pass
-
