@@ -2,3 +2,6 @@ GMSTemperatureProfile/
 GMSWellLog/
 VoxelProfile/
 .ropeproject
+.idea
+**__pycache__
+*.pyc
