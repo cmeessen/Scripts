@@ -28,14 +28,24 @@ and under functionals
 
 ## Script settings
 
+The script relies on [`tesspar`](../Tesseroids) for parallelisation. Make sure to add the location of the script to the path, e.g. by adding
+
+```bash
+export PATH=/path/to/repo/Gravity/Tesseroids/:$PATH
+```
+to the beginning of the script. Do not forget to replace `/path/to/repo` with the correct path to where you cloned this repository to. The location to the tesseroids binaries must also be found in the `PATH` variable.
+
 The file names, densities and resolutions can be adjusted in the bash file:
 
 ```bash
 fFreeAir='./FreeAir_EIGEN-6C4_WGS84.gdf' # The free-air anomaly from ICGEM
 fTopo='./ETOPO1.gdf' # Topography with the same bounds and resolution
-rhocrust=2670
-rhowater=1645
-dlon=0.0822
-dlat=0.0822
-dz=1        # Station height above topography
+rhocrust=2670     # Density / kg/m3
+rhowater=1645     # Density / kg/m3
+dlon=0.0822       # Resolution / ° longitude
+dlat=0.0822       # Resolution / ° latitude
+dz=1              # Station height above topography / m
+# tesspar settings
+n=90              # Total number of threads used for the computation
+nx=10             # Threads in longitudinal direction
 ```

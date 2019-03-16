@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 ###############################################################################
 #                     Copyright (C) 2018 by Christian Meeßen                  #
 #                                                                             #
@@ -20,14 +21,16 @@
 # This script calculates a spherical Bouguer correction including terrain
 # correction using Tesseroids by L. Uieda.
 #
-set -e
 fFreeAir='./FreeAir_EIGEN-6C4_WGS84.gdf' # The free-air anomaly from ICGEM
 fTopo='./ETOPO1.gdf' # Topography with the same bounds and resolution
-rhocrust=2670
-rhowater=1645 #
-dlon=0.0822
-dlat=0.0822
-dz=1        # Station height above topography
+rhocrust=2670     # Density / kg/m3
+rhowater=1645     # Density / kg/m3
+dlon=0.0822       # Resolution / ° longitude
+dlat=0.0822       # Resolution / ° latitude
+dz=1              # Station height above topography / m
+# tesspar settings
+n=90              # Total number of threads used for the computation
+nx=10             # Threads in longitudinal direction
 
 declare -a INFO=(`gmtinfo $fFreeAir -hi35 -i0o-360,1 -C`)
 xmin=${INFO[0]}
@@ -61,7 +64,7 @@ gmtconvert tessmodel_topography.tmp tessmodel_densities.tmp -A | \
 tessmodgen -s$dlon/$dlat -z0 > tessmodel_terrain.dat
 echo
 echo 'Initiating computation'
-tesspar tessmodel_terrain.dat tessmodel_stations.nc -n 90 -nx 10 -o gz_BouguerCorrection.dat
+tesspar tessmodel_terrain.dat tessmodel_stations.nc -n $n -nx $nx -o gz_BouguerCorrection.dat
 echo
 echo 'Subtracting from free-air anomaly'
 xyz2grd $fFreeAir -hi35 -i0o-360,1,2 -R$xmin/$xmax/$ymin/$ymax -I$dlon/$dlat -GFreeAir_EIGEN-6C4_WGS84.nc
