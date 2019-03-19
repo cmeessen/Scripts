@@ -80,7 +80,7 @@ do
     fi
 done
 
-declare -a tmp=(`grdinfo $InFile -C`)
+declare -a tmp=(`gmt grdinfo $InFile -C`)
 xmin=${tmp[1]}
 xmax=${tmp[2]}
 ymin=${tmp[3]}
@@ -99,9 +99,9 @@ out_format='png'
 
 if [ "$use_custom_cpt" = "True" ]
 then
-    makecpt -T${cpt_vmin}/${cpt_vmax}/${n_levels}+ -C${cpt} > colors.cpt
+    gmt makecpt -T${cpt_vmin}/${cpt_vmax}/${n_levels}+ -C${cpt} > colors.cpt
 else
-    grd2cpt $InFile -C${cpt} -E${n_levels} > colors.cpt
+    gmt grd2cpt $InFile -C${cpt} -E${n_levels} > colors.cpt
 fi
 
 echo "Plot information"
@@ -125,14 +125,14 @@ gmt set "$tick"FONT_ANNOT_PRIMARY=6p \
 
 if [ "$illum" == "True" ]
 then
-    grdgradient $InFile -Nt1 -A${azim} -Gillumination.nc
+    gmt grdgradient $InFile -Nt1 -A${azim} -Gillumination.nc
     ill='-Iillumination.nc'
 else
     ill=''
 fi
 
-grdimage $InFile -JX$map_width/$map_height $ROI $ill -Ccolors.cpt -BNsWe -Baf --MAP_ANNOT_ORTHO -K > $out_name
-psscale -D$scale_dX/-0.2/$map_width/0.3h -Ccolors.cpt -Baf+l"Value" -Np -O >> $out_name
+gmt grdimage $InFile -JX$map_width/$map_height $ROI $ill -Ccolors.cpt -BNsWe -Baf --MAP_ANNOT_ORTHO -K > $out_name
+gmt psscale -D$scale_dX/-0.2/$map_width/0.3h -Ccolors.cpt -Baf+l"Value" -Np -O >> $out_name
 
 case "$out_format" in
 bmp )
@@ -149,7 +149,7 @@ png )
 	ftpe='g';;
 esac
 
-psconvert -A -P -E400 -T$ftpe $out_name
+gmt psconvert -A -P -E400 -T$ftpe $out_name
 
 rm gmt.history gmt.conf $out_name colors.cpt
 rm *.eps illumination.nc *.bb 2> /dev/null

@@ -51,14 +51,14 @@ unit=${tmp[1]}
 declare -a tmp=(`grep -m 1 functional $1`)
 functional=${tmp[1]}
 
-ROI=`gmtinfo $1 -hi${n_head} -I${gridstep} -i0o-360,1,2`
+ROI=`gmt gmtinfo $1 -hi${n_head} -I${gridstep} -i0o-360,1,2`
 infostr="Created from $1 with gdf2nc"
 
 echo "Input      $1"
 echo "> gridstep ${gridstep}"
 echo "> ROI      ${ROI}"
 echo "Converting to ${outfile}"
-xyz2grd $1 -hi${n_head} -i0o-360,1,2 ${ROI} -I${gridstep} -G${outfile} -D+xLongitude+yLatitude+z${unit}+t${functional}+r"'${infostr}'" -fg
+gmt xyz2grd $1 -hi${n_head} -i0o-360,1,2 ${ROI} -I${gridstep} -G${outfile} -D+xLongitude+yLatitude+z${unit}+t${functional}+r"'${infostr}'" -fg
 echo "Done!"
 
 rm -f gmt.history
