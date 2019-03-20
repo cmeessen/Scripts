@@ -120,8 +120,8 @@ done
 
 if [ "$UseROI" = "False" ]
 then
-    ROI1=$(gmtinfo $File1 -I0.1b $nHeader)
-    ROI2=$(gmtinfo $File2 -I0.1b $nHeader)
+    ROI1=$(gmt gmtinfo $File1 -I0.1b $nHeader)
+    ROI2=$(gmt gmtinfo $File2 -I0.1b $nHeader)
     if [ "$ROI1" != "$ROI2" ]
     then
         echo "ERROR! Data extend differs between the files. Specify ROI with -R"
@@ -141,14 +141,14 @@ zColMin=$(bc <<< "scale=1;($column+1)*2-2")
 zColMax=$(bc <<< "scale=1;($column+1)*2-1")
 
 # Get map extent
-tmp1=(`gmtselect $File1 $ROI $nHeader | gmtinfo -C`)
+tmp1=(`gmt gmtselect $File1 $ROI $nHeader | gmt gmtinfo -C`)
 xmin=${tmp1[0]}
 xmax=${tmp1[1]}
 ymin=${tmp1[2]}
 ymax=${tmp1[3]}
 
 # Get minimum and maximum z values
-tmp2=(`gmtselect $File2 $ROI $nHeader | gmtinfo -C`)
+tmp2=(`gmt gmtselect $File2 $ROI $nHeader | gmt gmtinfo -C`)
 zmin1=${tmp1[$zColMin]}
 zmax1=${tmp1[$zColMax]}
 zmin2=${tmp2[$zColMin]}
@@ -208,9 +208,9 @@ gmt set "$tick"FONT_ANNOT_PRIMARY=6p \
 ###################################
 title='(a) '$File1
 echo $title
-pscontour $File1 $nHeader -i0,1,$column $ROI -Ccolors.cpt -JX$map_width/$map_height -W0.1p,black -I -A- -Y10 -K > $out_name
-psbasemap -R -J -Baf -BWNse+t"$title" --MAP_ANNOT_ORTHO -O -K >> $out_name
-psscale -D$scale_dX/-0.2/$map_width/0.3h -Ccolors.cpt -Baf$dZ+l"$tlegend" -Np -O -K >> $out_name
+gmt pscontour $File1 $nHeader -i0,1,$column $ROI -Ccolors.cpt -JX$map_width/$map_height -W0.1p,black -I -A- -Y10 -K > $out_name
+gmt psbasemap -R -J -Baf -BWNse+t"$title" --MAP_ANNOT_ORTHO -O -K >> $out_name
+gmt psscale -D$scale_dX/-0.2/$map_width/0.3h -Ccolors.cpt -Baf$dZ+l"$tlegend" -Np -O -K >> $out_name
 
 
 ###################################
@@ -218,8 +218,8 @@ psscale -D$scale_dX/-0.2/$map_width/0.3h -Ccolors.cpt -Baf$dZ+l"$tlegend" -Np -O
 ###################################
 title='(b) '$File2
 echo $title
-pscontour $File2 $nHeader -i0,1,$column $ROI -Ccolors.cpt -JX$map_width/$map_height -W0.1p,black -I -A- -X$map_dX -O -K >> $out_name
-psbasemap -R -J -Baf -BwNse+t"$title" --MAP_ANNOT_ORTHO -O -K >> $out_name
+gmt pscontour $File2 $nHeader -i0,1,$column $ROI -Ccolors.cpt -JX$map_width/$map_height -W0.1p,black -I -A- -X$map_dX -O -K >> $out_name
+gmt psbasemap -R -J -Baf -BwNse+t"$title" --MAP_ANNOT_ORTHO -O -K >> $out_name
 
 ###################################
 ## Difference map
@@ -227,12 +227,12 @@ psbasemap -R -J -Baf -BwNse+t"$title" --MAP_ANNOT_ORTHO -O -K >> $out_name
 
 echo 'Calculating difference'
 echo '> ROI', $ROI
-gmtselect $File1 $ROI $nHeader > File1ROI.tmp
-gmtselect $File2 $ROI $nHeader > File2ROI.tmp
-gmtmath File1ROI.tmp File2ROI.tmp -C$column SUB = diff.tmp
+gmt gmtselect $File1 $ROI $nHeader > File1ROI.tmp
+gmt gmtselect $File2 $ROI $nHeader > File2ROI.tmp
+gmt gmtmath File1ROI.tmp File2ROI.tmp -C$column SUB = diff.tmp
 
 echo '> Plot properties'
-tmp3=(`gmtinfo diff.tmp -C`)
+tmp3=(`gmt gmtinfo diff.tmp -C`)
 zminDiff=${tmp3[$zColMin]}
 zmaxDiff=${tmp3[$zColMax]}
 zminDiff2=`bc <<< "scale=5;$zminDiff*($zminDiff)"`
@@ -251,9 +251,9 @@ then
 fi
 
 echo '> Plot'
-makecpt -Cpolar -T$zmin/$zmax/$dZ > colors.cpt
-pscontour diff.tmp -i0,1,$column $ROI -Ccolors.cpt -I -JX$map_width/$map_height -X$map_dX -O -K >> $out_name
-psbasemap -R -J -Baf -BwNsE+t'(c) Difference a-b' --MAP_ANNOT_ORTHO=W -O -K >> $out_name
+gmt makecpt -Cpolar -T$zmin/$zmax/$dZ > colors.cpt
+gmt pscontour diff.tmp -i0,1,$column $ROI -Ccolors.cpt -I -JX$map_width/$map_height -X$map_dX -O -K >> $out_name
+gmt psbasemap -R -J -Baf -BwNsE+t'(c) Difference a-b' --MAP_ANNOT_ORTHO=W -O -K >> $out_name
 
 scale_dX=`bc <<< "scale=2;$map_width/2"`
 if [ "$UseHist" = "True" ]
@@ -262,7 +262,7 @@ then
 else
     OK='-O'
 fi
-psscale -D$scale_dX/-0.2/$map_width/0.3h -Ccolors.cpt -Baf$dZ+l"$tlegend" -Np $OK >> $out_name
+gmt psscale -D$scale_dX/-0.2/$map_width/0.3h -Ccolors.cpt -Baf$dZ+l"$tlegend" -Np $OK >> $out_name
 
 if [ "$UseHist" = "True" ]
 then
@@ -278,7 +278,7 @@ then
     Rmax=$(gmt pshistogram diff.tmp -i2 -W$BinWidth -IO -Z1 | gmt gmtinfo -: -C -o1)
     STD=$(gmt gmtmath diff.tmp -i2 STD RINT -Sf =)
     MEAN=$(gmt gmtmath diff.tmp -i2 MEAN RINT -Sf =)
-    pshistogram diff.tmp -i2 -JX$map_width/$hist_height -R-200/200/0/$Rmax -W$BinWidth -Bxaf+l"Stdev: $STD kg/m@+3@+; Mean: $MEAN kg/m@+3@+" -Byaf+l'Frequency / %' -BwSnE -N0 -Ggray -L1p -Z1e -X$map_dX -Y-$map_dY -O -K >> $out_name
+    gmt pshistogram diff.tmp -i2 -JX$map_width/$hist_height -R-200/200/0/$Rmax -W$BinWidth -Bxaf+l"Stdev: $STD kg/m@+3@+; Mean: $MEAN kg/m@+3@+" -Byaf+l'Frequency / %' -BwSnE -N0 -Ggray -L1p -Z1e -X$map_dX -Y-$map_dY -O -K >> $out_name
     STDleft=$(bc <<< "scale=2;$MEAN - $STD")
     STDright=$(bc <<< "scale=2;$MEAN + $STD")
     echo "$STDleft -100" > stdev.tmp
@@ -294,7 +294,7 @@ fi
 ###################################
 
 echo 'Converting'
-psconvert $out_name -A -Tg -Qt4
+gmt psconvert $out_name -A -Tg -Qt4
 
 if [ "${netcdf}" = 'True' ]
 then
