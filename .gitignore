@@ -7,3 +7,4 @@ VoxelProfile/
 *.pyc
 .ipynb_checkpoints
 .vscode
+.c9
