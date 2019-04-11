@@ -132,6 +132,31 @@ def materials():
                     sigma_d=None, # Dorn's law stress
                     q_d=None,     # Dorn's law activation energy
                     a_d=None))    # Dorn's law strain rate / 1/s
+    r.append(dict(name='olivine_wet',
+                    altname='',
+                    source='Jackson (2002)',
+                    source_disloc='Jackson (2002)',
+                    source_diff=None,
+                    source_dorn=None,
+                    via='',
+                    # Byerlee's law
+                    f_f_e=0.75,    # Friction coefficient extension
+                    f_f_c=3.0,     # Friction coefficient compression
+                    f_p=0.35,      # Pore fluid factor
+                    rho_b=3300.0,  # Bulk density
+                    # Dislocation creep
+                    a_p=5.5e-25,   # Preexponential scaling factor / Pa^(-n)/s
+                    n=4.48,         # Power law exponent
+                    q_p=498.0e3,   # Activation energy J/mol
+                    # Diffusion creep
+                    a_f=None,      # Preexp. scaling factor / 1/Pa/s
+                    q_f=None,      # Activation energy / J/mol
+                    a=None,        # Grain size / m
+                    m=None,        # Grain size exponent
+                    # Dorn's law properties
+                    sigma_d=None, # Dorn's law stress
+                    q_d=None,     # Dorn's law activation energy
+                    a_d=None))    # Dorn's law strain rate / 1/s
     r.append(dict(name='diabase',
                     altname='',
                     source='Ranalli and Murpy (1987)',
@@ -879,40 +904,40 @@ def sigma_d(material, z, temp, strain_rate=None,
 
 def print_mat_info(mat, ax=None):
     # make a pretty info plot on the materials
-    print ''
-    print '###################################################################'
-    print 'Name             :', mat['name']
-    print 'Alternative name :', mat['altname']
-    print 'Sources          :', mat['source']
-    print 'Used in          :', mat['via']
-    print ''
-    print 'Byerlee\'s law properties'
-    print 'f_f     :', mat['f_f_e'], '/', mat['f_f_c']
-    print 'f_p     :', mat['f_p']
-    print 'rho_b   :', mat['rho_b']
-    print ''
-    print 'Dislocation creep properties'
-    print 'Source  :', mat['source_disloc']
-    print 'A_p     :', mat['a_p']
-    print 'n       :', mat['n']
-    print 'Q_p     :', mat['q_p']
+    print('')
+    print('###################################################################')
+    print('Name             :', mat['name'])
+    print('Alternative name :', mat['altname'])
+    print('Sources          :', mat['source'])
+    print('Used in          :', mat['via'])
+    print('')
+    print('Byerlee\'s law properties')
+    print('f_f     :', mat['f_f_e'], '/', mat['f_f_c'])
+    print('f_p     :', mat['f_p'])
+    print('rho_b   :', mat['rho_b'])
+    print('')
+    print('Dislocation creep properties')
+    print('Source  :', mat['source_disloc'])
+    print('A_p     :', mat['a_p'])
+    print('n       :', mat['n'])
+    print('Q_p     :', mat['q_p'])
     if not mat['a_f'] is None:
-        print ''
-        print 'Diffusion creep properties'
-        print 'Source  :', mat['source_diff']
-        print 'A_f     :', mat['a_f']
-        print 'Q_f     :', mat['q_f']
-        print 'a       :', mat['a']
-        print 'm       :', mat['m']
+        print('')
+        print('Diffusion creep properties')
+        print('Source  :', mat['source_diff'])
+        print('A_f     :', mat['a_f'])
+        print('Q_f     :', mat['q_f'])
+        print('a       :', mat['a'])
+        print('m       :', mat['m'])
     if not mat['sigma_d'] is None:
-        print ''
-        print 'Dorn\'s law properties'
-        print 'Source:', mat['source_dorn']
-        print 'sigma_d :', mat['sigma_d']
-        print 'Q_d     :', mat['q_d']
-        print 'A_d     :', mat['a_d']
-    print '###################################################################'
-    print ''
+        print('')
+        print('Dorn\'s law properties')
+        print('Source:', mat['source_dorn'])
+        print('sigma_d :', mat['sigma_d'])
+        print('Q_d     :', mat['q_d'])
+        print('A_d     :', mat['a_d'])
+    print('###################################################################')
+    print('')
     if ax:
         props_byerlee = ['f_f_e', 'f_f_c', 'f_p', 'rho_b']
         props_disloc = ['source_disloc', 'a_p', 'n', 'q_p']
@@ -1052,7 +1077,7 @@ if __name__ == "__main__":
     # Make the buttons and input box
     def submit(text):
         strain_rate = float(text)
-        print 'Recomputing strength for strain rate', strain_rate
+        print('Recomputing strength for strain rate', strain_rate)
         for i in range(len(lines)):
             mat = matlist[i]
             sigma_plot, z_plot = compute_dsigma(mat, zs, T, strain_rate)
@@ -1143,14 +1168,14 @@ if __name__ == "__main__":
             # Also print info
             mat_idx = labeld[origline.get_label()]
             if 'the_table' in globals():
-                print 'deleting table'
+                print('deleting table')
                 the_table.remove()
                 del the_table
                 fig.canvas.draw()
             the_table = print_mat_info(mat_dbase[mat_idx], ax_table)
         else:
             if 'the_table' in globals():
-                print 'deleting table'
+                print('deleting table')
                 the_table.remove()
                 del the_table
                 fig.canvas.draw()
