@@ -21,16 +21,22 @@ from collections import OrderedDict
 
 """
 Converts a profile obtained from a GMS model in ParaView to a GMSH *geo file.
-Requires pygmsh. 
-
-IMPORTANT: Currently only works for x=const, i.e. parallely to y-axis. See
-TODO.
+Requires pygmsh.
 """
 
-# TODO: currently only works for profile parallel to the y axis. Add a
-#  method to compute the distance along the profile and use this as a local
-#  coordinate system to enable usage of arbitrary profiles.
-
+def compute_distance(array):
+    """ Compute distance and sort array"""
+    x = array[:,0]
+    y = array[:,1]
+    # Make a structured array for sorting
+    dtypes = [('d', 'f8'), ('z', 'f8'), ('y', 'f8')]
+    newarr = np.zeros(array.shape[0], dtype=dtypes)
+    newarr['d'] = np.sqrt((x[0] - x)**2 + (y[0] - y)**2)
+    newarr['z'] = array[:,2]
+    newarr.sort(order=['d', 'z'])
+    # Convert back to ndarray
+    oldshape = newarr.shape
+    return newarr.view(np.float64).reshape(oldshape+(-1,))
 
 def add_surface(filename, name, geom, lcar, BC=None, vscale=1):
     """
@@ -57,15 +63,12 @@ def add_surface(filename, name, geom, lcar, BC=None, vscale=1):
     """
     print('Processing', filename)
     # Important: columns are loaded in order y,z,x!
-    body = np.genfromtxt(filename, delimiter=',', skip_header=1,
-                         usecols=[1,2,0], names=['y','z','x'])
-    # Sort so that y-coords are increasing
-    body.sort(order=['y','z'])
+    # body = np.genfromtxt(filename, delimiter=',', skip_header=1,
+                        #  usecols=[1,2,0], names=['y','z','x'])
+    data = np.loadtxt(filename, delimiter=',', skiprows=1)
+    body = compute_distance(data)
     # Convert back to a ndarray
-    oldshape = body.shape
-    body = body.view(np.float64).reshape(oldshape+(-1,))
     body[:, 1] *= vscale
-    body[:, 2] = 0
     coords_top = body[1::2]
     coords_bot = body[::2]
     coords = np.concatenate((coords_top, coords_bot[::-1]))
@@ -113,7 +116,8 @@ def add_surface(filename, name, geom, lcar, BC=None, vscale=1):
 
 def process(layers, BCs, lcar, geo, vscale=1, tolerance=1e-7):
     """
-    Start the conversion process.
+    Starts the conversion process and writes the geo-file. The boundary names
+    are `Top`, `Bottom`, `Left` and `Right`.
 
     Parameters
     ----------
