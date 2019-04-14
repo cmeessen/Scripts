@@ -2,12 +2,7 @@
 
 Converts profiles obtained in ParaView to gmsh for further usage e.g. in Lynx or Golem. Written in Python3.
 
-> **IMPORTANT:**
-> currently the script only supports profiles parallely to the y-axis!
-
 **Todo**
-  - add support for arbitrary profile directions
-  - implement physical lines for side boundary conditions
   - command line support
 
 ## Prerequisites
