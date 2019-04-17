@@ -84,7 +84,7 @@ def materials():
                     via='',
                     # Byerlee's law
                     f_f_e=0.75,    # Friction coefficient extension
-                    f_f_c=3.0,     # Friction coefficient compression
+                    f_f_c=2.0,     # Friction coefficient compression
                     f_p=0.35,      # Pore fluid factor
                     rho_b=,  # Bulk density
                     # Dislocation creep
@@ -116,22 +116,13 @@ def materials():
                     via='',
                     # Byerlee's law
                     f_f_e=0.75,    # Friction coefficient extension
-                    f_f_c=3.0,     # Friction coefficient compression
+                    f_f_c=2.0,     # Friction coefficient compression
                     f_p=0.35,      # Pore fluid factor
                     rho_b=3300.0,  # Bulk density
                     # Dislocation creep
                     a_p=AGPa(4e15,3.0),   # Preexponential scaling factor / Pa^(-n)/s
                     n=3.0,         # Power law exponent
-                    q_p=540.0e3,   # Activation energy J/mol
-                    # Diffusion creep
-                    a_f=None,      # Preexp. scaling factor / 1/Pa/s
-                    q_f=None,      # Activation energy / J/mol
-                    a=None,        # Grain size / m
-                    m=None,        # Grain size exponent
-                    # Dorn's law properties
-                    sigma_d=None, # Dorn's law stress
-                    q_d=None,     # Dorn's law activation energy
-                    a_d=None))    # Dorn's law strain rate / 1/s
+                    q_p=540.0e3))  # Activation energy J/mol
     r.append(dict(name='olivine_wet',
                     altname='',
                     source='Jackson (2002)',
@@ -141,22 +132,13 @@ def materials():
                     via='',
                     # Byerlee's law
                     f_f_e=0.75,    # Friction coefficient extension
-                    f_f_c=3.0,     # Friction coefficient compression
+                    f_f_c=2.0,     # Friction coefficient compression
                     f_p=0.35,      # Pore fluid factor
                     rho_b=3300.0,  # Bulk density
                     # Dislocation creep
                     a_p=5.5e-25,   # Preexponential scaling factor / Pa^(-n)/s
                     n=4.48,         # Power law exponent
-                    q_p=498.0e3,   # Activation energy J/mol
-                    # Diffusion creep
-                    a_f=None,      # Preexp. scaling factor / 1/Pa/s
-                    q_f=None,      # Activation energy / J/mol
-                    a=None,        # Grain size / m
-                    m=None,        # Grain size exponent
-                    # Dorn's law properties
-                    sigma_d=None, # Dorn's law stress
-                    q_d=None,     # Dorn's law activation energy
-                    a_d=None))    # Dorn's law strain rate / 1/s
+                    q_p=498.0e3))  # Activation energy J/mol
     r.append(dict(name='diabase',
                     altname='',
                     source='Ranalli and Murpy (1987)',
@@ -166,22 +148,13 @@ def materials():
                     via='',
                     # Byerlee's law
                     f_f_e=0.75,    # Friction coefficient extension
-                    f_f_c=3.0,     # Friction coefficient compression
+                    f_f_c=2.0,     # Friction coefficient compression
                     f_p=0.35,      # Pore fluid factor
                     rho_b=2950.0,  # Bulk density
                     # Dislocation creep
                     a_p=AGPa(3.2e6,3.4),   # Preexponential scaling factor / Pa^(-n)/s
                     n=3.4,         # Power law exponent
-                    q_p=260.0e3,   # Activation energy J/mol
-                    # Diffusion creep
-                    a_f=None,      # Preexp. scaling factor / 1/Pa/s
-                    q_f=None,      # Activation energy / J/mol
-                    a=None,        # Grain size / m
-                    m=None,        # Grain size exponent
-                    # Dorn's law properties
-                    sigma_d=None, # Dorn's law stress
-                    q_d=None,     # Dorn's law activation energy
-                    a_d=None))    # Dorn's law strain rate / 1/s
+                    q_p=260.0e3))  # Activation energy J/mol
     r.append(dict(name='quartz_diorite',
                     altname='',
                     source='Ranalli and Murpy (1987)',
@@ -191,22 +164,13 @@ def materials():
                     via='',
                     # Byerlee's law
                     f_f_e=0.75,    # Friction coefficient extension
-                    f_f_c=3.0,     # Friction coefficient compression
+                    f_f_c=2.0,     # Friction coefficient compression
                     f_p=0.35,      # Pore fluid factor
                     rho_b=2900.0,  # Bulk density
                     # Dislocation creep
                     a_p=AGPa(2e4,2.4),   # Preexponential scaling factor / Pa^(-n)/s
                     n=2.4,         # Power law exponent
-                    q_p=219.0e3,   # Activation energy J/mol
-                    # Diffusion creep
-                    a_f=None,      # Preexp. scaling factor / 1/Pa/s
-                    q_f=None,      # Activation energy / J/mol
-                    a=None,        # Grain size / m
-                    m=None,        # Grain size exponent
-                    # Dorn's law properties
-                    sigma_d=None, # Dorn's law stress
-                    q_d=None,     # Dorn's law activation energy
-                    a_d=None))    # Dorn's law strain rate / 1/s
+                    q_p=219.0e3))  # Activation energy J/mol
     r.append(dict(name='anorthosite',
                     altname='',
                     source='Ranalli and Murpy (1987)',
@@ -216,22 +180,13 @@ def materials():
                     via='',
                     # Byerlee's law
                     f_f_e=0.75,    # Friction coefficient extension
-                    f_f_c=3.0,     # Friction coefficient compression
+                    f_f_c=2.0,     # Friction coefficient compression
                     f_p=0.35,      # Pore fluid factor
                     rho_b=2800.0,  # Bulk density
                     # Dislocation creep
                     a_p=AGPa(1.3e6,3.2),   # Preexponential scaling factor / Pa^(-n)/s
                     n=3.2,         # Power law exponent
-                    q_p=238.0e3,   # Activation energy J/mol
-                    # Diffusion creep
-                    a_f=None,      # Preexp. scaling factor / 1/Pa/s
-                    q_f=None,      # Activation energy / J/mol
-                    a=None,        # Grain size / m
-                    m=None,        # Grain size exponent
-                    # Dorn's law properties
-                    sigma_d=None, # Dorn's law stress
-                    q_d=None,     # Dorn's law activation energy
-                    a_d=None))    # Dorn's law strain rate / 1/s
+                    q_p=238.0e3))  # Activation energy J/mol
     r.append(dict(name='albite_rock',
                     altname='',
                     source='Ranalli and Murpy (1987)',
@@ -241,22 +196,13 @@ def materials():
                     via='',
                     # Byerlee's law
                     f_f_e=0.75,    # Friction coefficient extension
-                    f_f_c=3.0,     # Friction coefficient compression
+                    f_f_c=2.0,     # Friction coefficient compression
                     f_p=0.35,      # Pore fluid factor
                     rho_b=2600.0,  # Bulk density
                     # Dislocation creep
                     a_p=AGPa(1.3e6,3.9),   # Preexponential scaling factor / Pa^(-n)/s
                     n=3.9,         # Power law exponent
-                    q_p=234.0e3,   # Activation energy J/mol
-                    # Diffusion creep
-                    a_f=None,      # Preexp. scaling factor / 1/Pa/s
-                    q_f=None,      # Activation energy / J/mol
-                    a=None,        # Grain size / m
-                    m=None,        # Grain size exponent
-                    # Dorn's law properties
-                    sigma_d=None, # Dorn's law stress
-                    q_d=None,     # Dorn's law activation energy
-                    a_d=None))    # Dorn's law strain rate / 1/s
+                    q_p=234.0e3))  # Activation energy J/mol
     r.append(dict(name='quartzite_wet',
                     altname='',
                     source='Ranalli and Murpy (1987)',
@@ -266,22 +212,13 @@ def materials():
                     via='',
                     # Byerlee's law
                     f_f_e=0.75,    # Friction coefficient extension
-                    f_f_c=3.0,     # Friction coefficient compression
+                    f_f_c=2.0,     # Friction coefficient compression
                     f_p=0.35,      # Pore fluid factor
                     rho_b=2650.0,  # Bulk density
                     # Dislocation creep
                     a_p=AGPa(2e3, 2.3),   # Preexponential scaling factor / Pa^(-n)/s
                     n=2.3,         # Power law exponent
-                    q_p=154.0e3,   # Activation energy J/mol
-                    # Diffusion creep
-                    a_f=None,      # Preexp. scaling factor / 1/Pa/s
-                    q_f=None,      # Activation energy / J/mol
-                    a=None,        # Grain size / m
-                    m=None,        # Grain size exponent
-                    # Dorn's law properties
-                    sigma_d=None, # Dorn's law stress
-                    q_d=None,     # Dorn's law activation energy
-                    a_d=None))    # Dorn's law strain rate / 1/s
+                    q_p=154.0e3))  # Activation energy J/mol
     r.append(dict(name='quartzite',
                     altname='',
                     source='Ranalli and Murpy (1987)',
@@ -291,22 +228,13 @@ def materials():
                     via='',
                     # Byerlee's law
                     f_f_e=0.75,    # Friction coefficient extension
-                    f_f_c=3.0,     # Friction coefficient compression
+                    f_f_c=2.0,     # Friction coefficient compression
                     f_p=0.35,      # Pore fluid factor
                     rho_b=2650.0,  # Bulk density
                     # Dislocation creep
                     a_p=AGPa(100,2.4),   # Preexponential scaling factor / Pa^(-n)/s
                     n=2.4,         # Power law exponent
-                    q_p=156.0e3,   # Activation energy J/mol
-                    # Diffusion creep
-                    a_f=None,      # Preexp. scaling factor / 1/Pa/s
-                    q_f=None,      # Activation energy / J/mol
-                    a=None,        # Grain size / m
-                    m=None,        # Grain size exponent
-                    # Dorn's law properties
-                    sigma_d=None, # Dorn's law stress
-                    q_d=None,     # Dorn's law activation energy
-                    a_d=None))    # Dorn's law strain rate / 1/s
+                    q_p=156.0e3))  # Activation energy J/mol
     r.append(dict(name='granite_wet',
                     altname='',
                     source='Ranalli and Murpy (1987)',
@@ -316,22 +244,13 @@ def materials():
                     via='',
                     # Byerlee's law
                     f_f_e=0.75,    # Friction coefficient extension
-                    f_f_c=3.0,     # Friction coefficient compression
+                    f_f_c=2.0,     # Friction coefficient compression
                     f_p=0.35,      # Pore fluid factor
                     rho_b=2650.0,  # Bulk density
                     # Dislocation creep
                     a_p=AGPa(100,2.4),   # Preexponential scaling factor / Pa^(-n)/s
                     n=2.4,         # Power law exponent
-                    q_p=156.0e3,   # Activation energy J/mol
-                    # Diffusion creep
-                    a_f=None,      # Preexp. scaling factor / 1/Pa/s
-                    q_f=None,      # Activation energy / J/mol
-                    a=None,        # Grain size / m
-                    m=None,        # Grain size exponent
-                    # Dorn's law properties
-                    sigma_d=None, # Dorn's law stress
-                    q_d=None,     # Dorn's law activation energy
-                    a_d=None))    # Dorn's law strain rate / 1/s
+                    q_p=156.0e3))  # Activation energy J/mol
     r.append(dict(name='granite',
                     altname='',
                     source='Ranalli and Murpy (1987)',
@@ -341,22 +260,13 @@ def materials():
                     via='Ranalli and Murpy (1987)',
                     # Byerlee's law
                     f_f_e=0.75,    # Friction coefficient extension
-                    f_f_c=3.0,     # Friction coefficient compression
+                    f_f_c=2.0,     # Friction coefficient compression
                     f_p=0.35,      # Pore fluid factor
                     rho_b=2650.0,  # Bulk density
                     # Dislocation creep
                     a_p=AGPa(5,3.2),     # Preexponential scaling factor / Pa^(-n)/s
                     n=3.2,         # Power law exponent
-                    q_p=123.0e3,   # Activation energy J/mol
-                    # Diffusion creep
-                    a_f=None,      # Preexp. scaling factor / 1/Pa/s
-                    q_f=None,      # Activation energy / J/mol
-                    a=None,        # Grain size / m
-                    m=None,        # Grain size exponent
-                    # Dorn's law properties
-                    sigma_d=None, # Dorn's law stress
-                    q_d=None,     # Dorn's law activation energy
-                    a_d=None))    # Dorn's law strain rate / 1/s
+                    q_p=123.0e3))  # Activation energy J/mol
     r.append(dict(name='olivine_dry',
                     altname='Mantle',
                     source='Goetze and Evans (1979)',
@@ -366,18 +276,13 @@ def materials():
                     via='Sippel et al. (2016)',
                     # Byerlee's law
                     f_f_e=0.75,    # Friction coefficient extension
-                    f_f_c=3.0,     # Friction coefficient compression
+                    f_f_c=2.0,     # Friction coefficient compression
                     f_p=0.35,      # Pore fluid factor
                     rho_b=3300.0,  # Bulk density
                     # Dislocation creep
                     a_p=7.0e-14,   # Preexponential scaling factor / Pa^(-n)/s
                     n=3.0,         # Power law exponent
                     q_p=510.0e3,   # Activation energy J/mol
-                    # Diffusion creep
-                    a_f=None,      # Preexp. scaling factor / 1/Pa/s
-                    q_f=None,      # Activation energy / J/mol
-                    a=None,        # Grain size / m
-                    m=None,        # Grain size exponent
                     # Dorn's law properties
                     sigma_d=8.5e9, # Dorn's law stress
                     q_d=535e3,     # Dorn's law activation energy
@@ -391,22 +296,13 @@ def materials():
                     via='Sippel et al. (2016)',
                     # Byerlee's law
                     f_f_e=0.75,    # Friction coefficient extension
-                    f_f_c=3.0,     # Friction coefficient compression
+                    f_f_c=2.0,     # Friction coefficient compression
                     f_p=0.35,      # Pore fluid factor
                     rho_b=3050.0,  # Bulk density
                     # Dislocation creep
                     a_p=8.83e-22,  # Preexponential scaling factor / Pa^(-n)/s
                     n=4.2,         # Power law exponent
-                    q_p=445.0e3,   # Activation energy J/mol
-                    # Diffusion creep
-                    a_f=None,      # Preexp. scaling factor / 1/Pa/s
-                    q_f=None,      # Activation energy / J/mol
-                    a=None,        # Grain size / m
-                    m=None,        # Grain size exponent
-                    # Dorn's law properties
-                    sigma_d=None,  # Dorn's law stress
-                    q_d=None,      # Dorn's law activation energy
-                    a_d=None))     # Dorn's law strain rate
+                    q_p=445.0e3))  # Activation energy J/mol
     r.append(dict(name='diabase_dry',
                     altname='Gabbroid rocks',
                     source='Carter and Tsenn (1987)',
@@ -416,22 +312,13 @@ def materials():
                     via='Sippel et al. (2016)',
                     # Byerlee's law
                     f_f_e=0.75,    # Friction coefficient extension
-                    f_f_c=3.0,     # Friction coefficient compression
+                    f_f_c=2.0,     # Friction coefficient compression
                     f_p=0.35,      # Pore fluid factor
                     rho_b=2920.0,  # Bulk density
                     # Dislocation creep
                     a_p=6.31e-20,  # Preexponential scaling factor / Pa^(-n)/s
                     n=3.05,        # Power law exponent
-                    q_p=276.0e3,   # Activation energy J/mol
-                    # Diffusion creep
-                    a_f=None,      # Preexp. scaling factor / 1/Pa/s
-                    q_f=None,      # Activation energy / J/mol
-                    a=None,        # Grain size / m
-                    m=None,        # Grain size exponent
-                    # Dorn's law properties
-                    sigma_d=None,  # Dorn's law stress
-                    q_d=None,      # Dorn's law activation energy
-                    a_d=None))     # Dorn's law strain rate
+                    q_p=276.0e3))  # Activation energy J/mol
     r.append(dict(name='granite_dry',
                     altname='Meta-sedimentary rocks',
                     source='Carter and Tsenn (1987)',
@@ -441,22 +328,13 @@ def materials():
                     via='Sippel et al. (2016)',
                     # Byerlee's law
                     f_f_e=0.75,    # Friction coefficient extension
-                    f_f_c=3.0,     # Friction coefficient compression
+                    f_f_c=2.0,     # Friction coefficient compression
                     f_p=0.35,      # Pore fluid factor
                     rho_b=2750.0,  # Bulk density
                     # Dislocation creep
                     a_p=3.16e-26,  # Preexponential scaling factor / Pa^(-n)/s
                     n=3.3,         # Power law exponent
-                    q_p=186e3,     # Activation energy J/mol
-                    # Diffusion creep
-                    a_f=None,      # Preexp. scaling factor / 1/Pa/s
-                    q_f=None,      # Activation energy / J/mol
-                    a=None,        # Grain size / m
-                    m=None,        # Grain size exponent
-                    # Dorn's law properties
-                    sigma_d=None,  # Dorn's law stress
-                    q_d=None,      # Dorn's law activation energy
-                    a_d=None))     # Dorn's law strain rate
+                    q_p=186e3))    # Activation energy J/mol
     r.append(dict(name='quartzite_dry',
                     altname='Sediments',
                     source='Burov et al. (1998)',
@@ -466,22 +344,13 @@ def materials():
                     via='Sippel et al. (2016), Carter and Tsenn (1987)',
                     # Byerlee's law
                     f_f_e=0.75,    # Friction coefficient extension
-                    f_f_c=3.0,     # Friction coefficient compression
+                    f_f_c=2.0,     # Friction coefficient compression
                     f_p=0.35,      # Pore fluid factor
                     rho_b=2600,    # Bulk density
                     # Dislocation creep
                     a_p=5.0e-12,   # Preexponential scaling factor / Pa^(-n)/s
                     n=3.0,         # Power law exponent
-                    q_p=190e3,     # Activation energy J/mol
-                    # Diffusion creep
-                    a_f=None,      # Preexp. scaling factor / 1/Pa/s
-                    q_f=None,      # Activation energy / J/mol
-                    a=None,        # Grain size / m
-                    m=None,        # Grain size exponent
-                    # Dorn's law properties
-                    sigma_d=None,  # Dorn's law stress
-                    q_d=None,      # Dorn's law activation energy
-                    a_d=None))     # Dorn's law strain rate
+                    q_p=190e3))    # Activation energy J/mol
     r.append(dict(name='diorite_dry',
                     altname='Meta-igneous rocks',
                     source='Burov et al. (1998)',
@@ -491,22 +360,13 @@ def materials():
                     via='Sippel et al. (2016)',
                     # Byerlee's law
                     f_f_e=0.75,    # Friction coefficient extension
-                    f_f_c=3.0,     # Friction coefficient compression
+                    f_f_c=2.0,     # Friction coefficient compression
                     f_p=0.35,      # Pore fluid factor
                     rho_b=2800,  # Bulk density
                     # Dislocation creep
                     a_p=5.2e-18,     # Preexponential scaling factor / Pa^(-n)/s
                     n=2.4,         # Power law exponent
-                    q_p=219e3,     # Activation energy J/mol
-                    # Diffusion creep
-                    a_f=None,      # Preexp. scaling factor / 1/Pa/s
-                    q_f=None,      # Activation energy / J/mol
-                    a=None,        # Grain size / m
-                    m=None,        # Grain size exponent
-                    # Dorn's law properties
-                    sigma_d=None,  # Dorn's law stress
-                    q_d=None,      # Dorn's law activation energy
-                    a_d=None))     # Dorn's law strain rate
+                    q_p=219e3))    # Activation energy J/mol
     r.append(dict(name='peridotite_dry',
                     altname='Mantle lithosphere of slab and shield, \
                              dry_olivine',
@@ -517,7 +377,7 @@ def materials():
                     via='Sobolev et al. (2006)',
                     # Byerlee's law
                     f_f_e=0.75,    # Friction coefficient extension
-                    f_f_c=3.0,     # Friction coefficient compression
+                    f_f_c=2.0,     # Friction coefficient compression
                     f_p=0.35,         # Pore fluid factor
                     rho_b=3280.0,     # Bulk density
                     # Dislocation creep
@@ -542,7 +402,7 @@ def materials():
                     via='Sobolev et al. (2006)',
                     # Byerlee's law
                     f_f_e=0.75,    # Friction coefficient extension
-                    f_f_c=3.0,     # Friction coefficient compression
+                    f_f_c=2.0,     # Friction coefficient compression
                     f_p=0.35,         # Pore fluid factor
                     rho_b=3280.0,     # Bulk density
                     # Dislocation creep
@@ -568,7 +428,7 @@ def materials():
                     via='Sobolev et al. (2006)',
                     # Byerlee's law
                     f_f_e=0.75,    # Friction coefficient extension
-                    f_f_c=3.0,     # Friction coefficient compression
+                    f_f_c=2.0,     # Friction coefficient compression
                     f_p=0.35,         # Pore fluid factor
                     rho_b=3300.0,     # Bulk density
                     # Dislocation creep
@@ -593,22 +453,13 @@ def materials():
                     via='Sobolev et al. (2006)',
                     # Byerlee's law
                     f_f_e=0.75,    # Friction coefficient extension
-                    f_f_c=3.0,     # Friction coefficient compression
+                    f_f_c=2.0,     # Friction coefficient compression
                     f_p=0.35,         # Pore fluid factor
                     rho_b=2650.0,     # Bulk density
                     # Dislocation creep
                     a_p=1e-28,        # Preexponential scaling factor
                     n=4.0,            # Power law exponent
-                    q_p=223e3,        # Activation energy
-                    # Diffusion creep
-                    a_f=None,         # Preexp. scaling factor / 1/Pa/s
-                    q_f=None,         # Activation energy / J/mol
-                    a=None,           # Grain size / m
-                    m=None,           # Grain size exponent
-                    # Dorn's law
-                    sigma_d=None,     # Dorn's law stress
-                    q_d=None,         # Dorn's law activation energy
-                    a_d=None))        # Dorn's law strain rate
+                    q_p=223e3))       # Activation energy
     r.append(dict(name='quartzite_wet_2700',
                     altname='Uppermost crust continent',
                     source='Gleason and Tullis (1995)',
@@ -618,22 +469,13 @@ def materials():
                     via='Sobolev et al. (2006)',
                     # Byerlee's law
                     f_f_e=0.75,    # Friction coefficient extension
-                    f_f_c=3.0,     # Friction coefficient compression
+                    f_f_c=2.0,     # Friction coefficient compression
                     f_p=0.35,         # Pore fluid factor
                     rho_b=2700.0,     # Bulk density
                     # Dislocation creep
                     a_p=1e-28,        # Preexponential scaling factor
                     n=4.0,            # Power law exponent
-                    q_p=223e3,        # Activation energy
-                    # Diffusion creep
-                    a_f=None,         # Preexp. scaling factor / 1/Pa/s
-                    q_f=None,         # Activation energy / J/mol
-                    a=None,           # Grain size / m
-                    m=None,           # Grain size exponent
-                    # Dorn's law
-                    sigma_d=None,     # Dorn's law stress
-                    q_d=None,         # Dorn's law activation energy
-                    a_d=None))        # Dorn's law strain rate
+                    q_p=223e3))       # Activation energy
     r.append(dict(name='quartzite_wet_weak',
                     altname='Upper crust continent',
                     source='Gleason and Tullis (1995)',
@@ -643,22 +485,13 @@ def materials():
                     via='Sobolev et al. (2006)',
                     # Byerlee's law
                     f_f_e=0.75,    # Friction coefficient extension
-                    f_f_c=3.0,     # Friction coefficient compression
+                    f_f_c=2.0,     # Friction coefficient compression
                     f_p=0.35,         # Pore fluid factor
                     rho_b=2800.0,     # Bulk density
                     # Dislocation creep
                     a_p=1e-27,        # Preexponential scaling factor
                     n=4.0,            # Power law exponent
-                    q_p=223e3,        # Activation energy
-                    # Diffusion creep
-                    a_f=None,         # Preexp. scaling factor / 1/Pa/s
-                    q_f=None,         # Activation energy / J/mol
-                    a=None,           # Grain size / m
-                    m=None,           # Grain size exponent
-                    # Dorn's law
-                    sigma_d=None,     # Dorn's law stress
-                    q_d=None,         # Dorn's law activation energy
-                    a_d=None))        # Dorn's law strain rate
+                    q_p=223e3))       # Activation energy
     r.append(dict(name='plagioclase_wet',
     # Note: this one doesn't fit with the model parameters given in drezina.inp!
                     altname='Granulite, mafic crust continent',
@@ -669,22 +502,13 @@ def materials():
                     via='Sobolev et al. (2006)',
                     # Byerlee's law
                     f_f_e=0.75,    # Friction coefficient extension
-                    f_f_c=3.0,     # Friction coefficient compression
+                    f_f_c=2.0,     # Friction coefficient compression
                     f_p=0.35,         # Pore fluid factor
                     rho_b=2950.0,     # Bulk density
                     # Dislocation creep
                     a_p=3.981e-16,      # Preexponential scaling factor
                     n=3.0,            # Power law exponent
-                    q_p=356e3,        # Activation energy
-                    # Diffusion creep
-                    a_f=None,         # Preexp. scaling factor / 1/Pa/s
-                    q_f=None,         # Activation energy / J/mol
-                    a=None,           # Grain size / m
-                    m=None,           # Grain size exponent
-                    # Dorn's law
-                    sigma_d=None,     # Dorn's law stress
-                    q_d=None,         # Dorn's law activation energy
-                    a_d=None))        # Dorn's law strain rate
+                    q_p=356e3))       # Activation energy
     r.append(dict(name='granulite_dry',
                     altname='Pikwetonian granulite',
                     source='UNKNOWN',
@@ -694,22 +518,13 @@ def materials():
                     via='Sobolev et al. (2006) Drezina.inp',
                     # Byerlee's law
                     f_f_e=0.75,    # Friction coefficient extension
-                    f_f_c=3.0,     # Friction coefficient compression
+                    f_f_c=2.0,     # Friction coefficient compression
                     f_p=0.35,         # Pore fluid factor
                     rho_b=2950,       # Bulk density
                     # Dislocation creep
                     a_p=3.2e-21,      # Preexponential scaling factor
                     n=4.2,            # Power law exponent
-                    q_p=445.0e3,      # Activation energy
-                    # Diffusion creep
-                    a_f=None,         # Preexp. scaling factor / 1/Pa/s
-                    q_f=None,         # Activation energy / J/mol
-                    a=None,           # Grain size / m
-                    m=None,           # Grain size exponent
-                    # Dorn's law
-                    sigma_d=None,     # Dorn's law stress
-                    q_d=None,         # Dorn's law activation energy
-                    a_d=None))        # Dorn's law strain rate
+                    q_p=445.0e3))     # Activation energy
     return r
 
 
@@ -831,10 +646,12 @@ def sigma_dorn(material, temp, strain_rate):
     sigma_d = material['sigma_d']
     q_d = material['q_d']
     a_d = material['a_d']
-    if sigma_d is None:
+    if q_d == 0 or a_d == 0:
         return np.nan
-    else:
-        return sigma_d*(1.0 - np.sqrt(-1.0*R*temp/q_d*np.log(strain_rate/a_d)))
+    dorn = sigma_d*(1.0 - np.sqrt(-1.0*R*temp/q_d*np.log(strain_rate/a_d)))
+    if dorn < 0.0:
+        dorn = 0
+    return dorn
 
 def sigma_d(material, z, temp, strain_rate=None,
             compute=None, mode=None):
@@ -883,22 +700,25 @@ def sigma_d(material, z, temp, strain_rate=None,
 
     s_byerlee = sigma_byerlee(material, z, mode)
 
-    if 'diffusion' in compute:
+    proplist = list(mat.keys())
+    if 'diffusion' in compute and 'a_f' in proplist:
         s_diff = sigma_diffusion(material, temp, e_prime)
     else:
         s_diff = np.nan
 
-    if 'dislocation' in compute and 'dorn' in compute:
-        if s_byerlee > 200e6:
-            s_creep = sigma_dislocation(material, temp, e_prime)
-        else:
-            s_creep = sigma_dorn(material, temp, e_prime)
-    elif 'dislocation' in compute and not 'dorn' in compute:
-        s_creep = sigma_dislocation(material, temp, e_prime)
-    elif 'dorn' in compute and not 'dislocation' in compute:
-        s_creep = sigma_dorn(material, temp, e_prime)
+    if 'dislocation' in compute and 'a_p' in proplist:
+        s_disloc = sigma_dislocation(material, temp, e_prime)
     else:
-        s_creep = np.nan
+        s_disloc = np.nan
+    if 'dorn' in compute and 'sigma_d' in proplist:
+        s_dorn = sigma_dorn(material, temp, e_prime)
+    else:
+        s_dorn = np.nan
+
+    if (s_disloc > 200e6) and (s_dorn > 0):
+        s_creep = s_dorn
+    else:
+        s_creep = s_disloc
 
     return min([s_byerlee, s_creep, s_diff])
 
@@ -921,7 +741,8 @@ def print_mat_info(mat, ax=None):
     print('A_p     :', mat['a_p'])
     print('n       :', mat['n'])
     print('Q_p     :', mat['q_p'])
-    if not mat['a_f'] is None:
+    proplist = list(mat.keys())
+    if 'a_f' in proplist:
         print('')
         print('Diffusion creep properties')
         print('Source  :', mat['source_diff'])
@@ -929,7 +750,7 @@ def print_mat_info(mat, ax=None):
         print('Q_f     :', mat['q_f'])
         print('a       :', mat['a'])
         print('m       :', mat['m'])
-    if not mat['sigma_d'] is None:
+    if 'sigma_d' in proplist:
         print('')
         print('Dorn\'s law properties')
         print('Source:', mat['source_dorn'])
@@ -946,9 +767,9 @@ def print_mat_info(mat, ax=None):
         row_labels = ['name', 'source', 'via']
         row_labels.extend(props_byerlee)
         row_labels.extend(props_disloc)
-        if not mat['a_f'] is None:
+        if 'a_f' in proplist:
             row_labels.extend(props_diff)
-        if not mat['sigma_d'] is None:
+        if 'sigma_d' in proplist:
             row_labels.extend(props_dorn)
         cell_text = []
         for prop in row_labels:
@@ -1015,7 +836,7 @@ if __name__ == "__main__":
     strain_rate = 1e-16
     num_points = 1000
 
-    xmin = -4.5
+    xmin = -2.5
     xmax = 1.5
 
     ymax = 100.0   # Max. depth in km
