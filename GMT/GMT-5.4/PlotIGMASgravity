@@ -26,14 +26,17 @@ then
   echo "Usage: PlotIGMASGravity InputFile [-h][-R][-U]"
   echo "       Arguments in [] are optional."
   echo
-  echo "h <int>     - Number of header lines, default 1."
-  echo "R <ROI>     - Area to plot in GMT format xmin/xmax/ymin/ymax"
-  echo "U <UTMZONE> - UTM Zone to plot borders and shorelines, e.g. S20 or N10"
+  echo "h <int>          - Number of header lines, default 1."
+  echo "R <ROI>          - Area to plot in GMT format xmin/xmax/ymin/ymax."
+  echo "U <UTMZONE>      - UTM Zone to plot borders and shorelines, e.g. S20 or N10."
+  echo "vabs <min> <max> - Minimum and maximum z value for absolute fields."
+  echo "vres <min> <max> - Minimum and maximum z value for residual field."
+  echo "dZ <val>         - Increment of color scales."
   echo
   echo "Plots measured, calculated gravity and residual gravity for csv-station files"
   echo "from IGMAS+. Columns need to be 'X', 'Y', 'Z', 'measured', 'calculated', 'residual'."
   echo
-  exit
+  exit 0
 fi
 
 InFile=$1
@@ -45,30 +48,27 @@ verbose='False'
 tlegend='Value'
 cpt='-Chaxby'
 I=''
+dZ=20
+vabs='False'
+vres='False'
 shift 1
 
 # Go through command line options
-while (( "$#" ))
-do
-    if [ "$1" = "-h" ]
-    then
+while (( "$#" )); do
+    if [ "$1" = "-h" ]; then
         nHeader="-hi$2"
         shift 2
-    elif [ "$1" = "-R" ]
-    then
+    elif [ "$1" = "-R" ]; then
         UseROI='True'
         ROI="-R$2"
         shift 2
-    elif [ "$1" = "-U" ]
-    then
+    elif [ "$1" = "-U" ]; then
         utm='True'
         utm_hemi=${2:0:1}
         utm_zone=${2:1}
-        if [[ "$utm_hemi" = "S" ]]
-        then
+        if [[ "$utm_hemi" = "S" ]]; then
             utm_zone="-"$utm_zone
-        elif [[ "$utm_hemi" = "N" ]]
-        then
+        elif [[ "$utm_hemi" = "N" ]]; then
             utm_zone="+"$utm_zone
         else
             echo "Unknown utm hemisphere: $utm_hemi"
@@ -77,17 +77,29 @@ do
         echo "utm_hemi: $utm_hemi"
         echo "utm_zone: $utm_zone"
         shift 2
+    elif [ "$1" = "-vabs" ]; then
+        CScaleAbsMin=$2
+        CScaleAbsMax=$3
+        vabs='True'
+        shift 3
+    elif [ "$1" = "-vres" ]; then
+        CScaleMin=$2
+        CScaleMax=$3
+        vres='True'
+        shift 3
+    elif [ "$1" = "-dZ" ]; then
+        dZ=$2
+        shift 2
     else
         echo "ERROR! Unknown argument $1"
         echo
-        exit
+        exit 1
     fi
 done
 
 version=`gmt --version`
 tick='--'
-if [[ $version == "5.4"* ]]
-then
+if [[ $version == "5.4"* ]]; then
   tick=''
 fi
 
@@ -116,15 +128,13 @@ gcalcmax=${fileinfo[9]}
 gresmin=${fileinfo[10]}
 gresmax=${fileinfo[11]}
 
-if [[ "$UseROI" = "False" ]]
-then
+if [[ "$UseROI" = "False" ]]; then
     ROI="-R$xmin/$xmax/$ymin/$ymax"
 fi
 
 echo 'Define map bounds'
 dX=$(bc <<< "scale=2;$xmax - ($xmin)")
 dY=$(bc <<< "scale=2;$ymax - ($ymin)")
-dZ=20
 map_width=8
 map_height=$(bc <<< "scale=2;$dY/$dX*$map_width")
 scale_dX=$(bc <<< "scale=2;$map_width/2")
@@ -136,8 +146,7 @@ scale_dX=$(bc <<< "scale=2;$map_width+$map_offset/2-$map_width/2")
 scale_dY=$(bc <<< "scale=2;-0.2")
 scale_width=$(bc <<< "scale=2;$map_width")
 
-if [[ "$utm" = "True" ]]
-then
+if [[ "$utm" = "True" ]]; then
     echo "Configuring UTM Projection "$utm_zone" "$utm_hemi
     echo "$xmin $ymin" > ROI_UTM.dat.tmp
     echo "$xmax $ymax" >> ROI_UTM.dat.tmp
@@ -155,20 +164,24 @@ then
 fi
 
 echo "Define absolut gravity color scale"
-CScaleAbsMin=$(bc <<< "if ($gmeasmin < ($gcalcmin)) $gmeasmin else $gcalcmin")
-CScaleAbsMax=$(bc <<< "if ($gmeasmax > ($gcalcmax)) $gmeasmax else $gcalcmax")
+if [ "$vabs" = 'False' ]; then
+    CScaleAbsMin=$(bc <<< "if ($gmeasmin < ($gcalcmin)) $gmeasmin else $gcalcmin")
+    CScaleAbsMax=$(bc <<< "if ($gmeasmax > ($gcalcmax)) $gmeasmax else $gcalcmax")
+fi
 CScaleAbs="-T$CScaleAbsMin/$CScaleAbsMax/$dZ"
 echo '>> '$CScaleAbs
 
 echo "Define residual color scale"
 echo $gresmin $gresmax
-zminABS=$(bc <<< "sqrt($gresmin*$gresmin)")
-zmaxABS=$(bc <<< "sqrt($gresmax*$gresmax)")
-CScaleMin=$(bc <<< "if ($zminABS < $zmaxABS) -$zmaxABS else -$zminABS")
-CScaleMax=$(bc <<< "if ($zminABS < $zmaxABS) $zmaxABS else $zminABS")
-# Round to nearest 20
-CScaleMin=`bc <<< "scale=0;($CScaleMin/20-1)*20"`
-CScaleMax=`bc <<< "scale=0;($CScaleMax/20+1)*20"`
+if [ "$vres" = 'False' ]; then
+    zminABS=$(bc <<< "sqrt($gresmin*$gresmin)")
+    zmaxABS=$(bc <<< "sqrt($gresmax*$gresmax)")
+    CScaleMin=$(bc <<< "if ($zminABS < $zmaxABS) -$zmaxABS else -$zminABS")
+    CScaleMax=$(bc <<< "if ($zminABS < $zmaxABS) $zmaxABS else $zminABS")
+    # Round to nearest 20
+    CScaleMin=`bc <<< "scale=0;($CScaleMin/$dZ-1)*$dZ"`
+    CScaleMax=`bc <<< "scale=0;($CScaleMax/$dZ+1)*$dZ"`
+fi
 CScale="-T$CScaleMin/$CScaleMax/$dZ"
 
 echo "Plot information"
@@ -188,8 +201,7 @@ pscoastcmd2="-J -R -A0/0/1 -Di -W0.3p,119/138/159 -O -P -K"
 
 # Map1 - Measured gz
 gmt pscontour $InFile $nHeader -i0,1,3 -Ccolors_abs.cpt -JX$map_width/$map_height $ROI -I -Baf -BWNse+t'Measured gravity field' --MAP_ANNOT_ORTHO -P -K > $out_name
-if [[ "$utm" = "True" ]]
-then
+if [[ "$utm" = "True" ]]; then
     gmt pscoast $pscoastcmd1 >> $out_name
     gmt pscoast $pscoastcmd2 >> $out_name
 fi
@@ -199,8 +211,7 @@ gmt psscale -D$scale_dX/$scale_dY/$scale_width/0.5h -Ccolors_abs.cpt -Baf20+l'Gr
 
 # Map2 - Calculated gz
 gmt pscontour $InFile $nHeader -i0,1,4 -Ccolors_abs.cpt -JX$map_width/$map_height $ROI -I -Baf -BwNse+t'Calculated gravity field' -X$map_offset -O -P -K >> $out_name
-if [[ "$utm" = "True" ]]
-then
+if [[ "$utm" = "True" ]]; then
     gmt pscoast $pscoastcmd1 >> $out_name
     gmt pscoast $pscoastcmd2 >> $out_name
 fi
@@ -208,8 +219,7 @@ fi
 # Map 3 - Residual gz
 gmt pscontour $InFile $nHeader -i0,1,5 -Ccolors.cpt -JX$map_width/$map_height $ROI -I -Baf -BwNsE+t'Residual gravity field' --MAP_ANNOT_ORTHO=W -X$map_offset -O -P -K >> $out_name
 scale_dX=$(bc <<< "scale=2;$map_width/2")
-if [[ "$utm" = "True" ]]
-then
+if [[ "$utm" = "True" ]]; then
     gmt pscoast $pscoastcmd1 >> $out_name
     gmt pscoast $pscoastcmd2 >> $out_name
 fi
