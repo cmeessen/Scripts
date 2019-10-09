@@ -1,0 +1,10 @@
+# Layer Name            Rho_Matrix    PhiInf        Phi0          beta          Cond          SpecHeat      HeatGen       DensBulk      CondBulk
+#                       [kg/m3]       [abs]         [abs]         [1/km]        [W/m/K]       [kJ/kg/K]     [W/m3]        
+Water                   2670          0.0           0.0           0.0           0.0           0.0           0.0           YES           YES
+Sediments0              1860          0.0           0.0           0.0           0.0           0.0           0.0           YES           YES
+Sediments2              2260          0.0           0.0           0.0           0.0           0.0           0.0           YES           YES
+Sediments4              2470          0.0           0.0           0.0           0.0           0.0           0.0           YES           YES
+Sediments6              2590          0.0           0.0           0.0           0.0           0.0           0.0           YES           YES
+Sediments8              2650          0.0           0.0           0.0           0.0           0.0           0.0           YES           YES
+Crust                   2850          0.0           0.0           0.0           0.0           0.0           0.0           YES           YES
+LithMantle              3300          0.0           0.0           0.0           0.0           0.0           0.0           YES           YES
