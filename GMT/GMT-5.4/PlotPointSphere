@@ -24,16 +24,21 @@
 ###  echo "--> $i"
 ###done
 
-if [ $# -lt 1 ]
+nHeader=''
+column=2
+pointSize=0.1
+
+if [ $# -lt 3 ]
 then
   echo
   echo "Not enough arguments."
   echo
-  echo "Usage: PlotPointSphere InputFile LON0 LAT0 [PropertyColumn [HeaderLines]]"
+  echo "Usage: PlotPointSphere InputFile LON0 LAT0 [PointSize [PropertyColumn [HeaderLines]]]"
   echo "       arguments in [] are optional"
   echo
   echo "LON0           - Longitude to look at"
   echo "LAT0           - Latitude to look at"
+  echo "PointSize      - Default: 0.1"
   echo "PropertyColumn - If the InputFile contains multiple columns, this"
   echo "                 defines the column with the value to plot. Columns"
   echo "                 start counting at 0. Default is 2"
@@ -46,21 +51,32 @@ then
   echo "the number of header lines."
   echo
   exit
-elif [ $# -eq 1 ]
-then
-  InFile=$1
-  column=2
-  nHeader=""
-elif [ $# -eq 2 ]
-then
-  InFile=$1
-  column=$2
-  nHeader=""
 elif [ $# -eq 3 ]
 then
   InFile=$1
-  column=$2
-  nHeader="-hi$3"
+  LON0=$2
+  LAT0=$3
+elif [ $# -eq 4 ]
+then
+  InFile=$1
+  LON0=$2
+  LAT0=$3
+  pointSize=$4
+elif [ $# -eq 5 ]
+then
+  InFile=$1
+  LON0=$2
+  LAT0=$3
+  pointSize=$4
+  column=$5
+elif [ $# -eq 6 ]
+then
+  InFile=$1
+  LON0=$2
+  LAT0=$3
+  pointSize=$4
+  column=$5
+  nHeader=$6
 fi
 
 # I10 - return -R
@@ -72,15 +88,15 @@ zColMin=$(bc <<< "scale=1;($column+1)*2-2")
 zColMax=$(bc <<< "scale=1;($column+1)*2-1")
 echo zColMin $zColMin
 echo zColMax $zColMax
-declare -a fileinfo=(`gmtinfo $InFile -C`)
+declare -a fileinfo=(`gmt gmtinfo $InFile -C`)
 xmin=${fileinfo[0]}
 xmax=${fileinfo[1]}
 ymin=${fileinfo[2]}
 ymax=${fileinfo[3]}
 zmin=${fileinfo[$zColMin]}
 zmax=${fileinfo[$zColMax]}
-LON0=`bc <<< "scale=2;($xmax+($xmin))/2"`
-LAT0=`bc <<< "scale=2;($ymax+($ymin))/2"`
+#LON0=`bc <<< "scale=2;($xmax+($xmin))/2"`
+#LAT0=`bc <<< "scale=2;($ymax+($ymin))/2"`
 
 dX=$(bc <<< "scale=2;$xmax-($xmin)")
 dY=$(bc <<< "scale=2;$ymax-($ymin)")
@@ -104,7 +120,7 @@ echo "Color scale $CScale"
 gmt set --FONT_ANNOT_PRIMARY=6p --FONT_ANNOT_SECONDARY=6p --FONT_LABEL=6p --FONT_TITLE=8p,Helvetica-Bold \
 	--MAP_ANNOT_OFFSET_PRIMARY=0.1 --MAP_FRAME_PEN=0.5p --MAP_TICK_LENGTH_PRIMARY=0.1
 gmt makecpt -Chaxby.cpt $CScale > colors.cpt
-gmt psxy $InFile -i0,1,$column $nHeader -Ss0.1 -Ccolors.cpt -JG$LON0/$LAT0/10 -Rg -K > $out_name
+gmt psxy $InFile -i0,1,$column $nHeader -Ss$pointSize -Ccolors.cpt -JG$LON0/$LAT0/10 -Rg -K > $out_name
 #  -A0/2/4
 # D - resolution
 # N - political borders
