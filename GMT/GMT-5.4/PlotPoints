@@ -74,7 +74,7 @@ zColMin=$(bc <<< "scale=1;($column+1)*2-2")
 zColMax=$(bc <<< "scale=1;($column+1)*2-1")
 
 # Get map extent and zvalues
-tmp1=(`gmtselect $InFile $ROI $nHeader | gmtinfo -C`)
+tmp1=(`gmt gmtselect $InFile $ROI $nHeader | gmt gmtinfo -C`)
 xmin=${tmp1[0]}
 xmax=${tmp1[1]}
 ymin=${tmp1[2]}
