@@ -418,14 +418,14 @@ def materials():
                     sigma_d=8.5e9,    # Dorn's law stress / Pa
                     q_d=535e3,        # Dorn's law activation energy / J/mol
                     a_d=5.754e11))     # Dorn's law strain rate
-    r.append(dict(name='peridotite_dry_asthenosphere',
+    r.append(dict(name='peridotite_wet_asthenosphere',
     # Difference to peridotite_dry_SA is density
                     altname='Mantle asthenosphere',
                     source='Hirth and Kohlstedt (1996), Kameyama et al. (1999)',
                     source_disloc='Hirth and Kohlstedt (1996)',
                     source_diff='Kameyama et al. (1999)',
                     source_dorn='Kameyama et al. (1999)',
-                    via='Sobolev et al. (2006)',
+                    via='',
                     # Byerlee's law
                     f_f_e=0.75,    # Friction coefficient extension
                     f_f_c=2.0,     # Friction coefficient compression
