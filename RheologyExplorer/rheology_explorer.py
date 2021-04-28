@@ -249,7 +249,7 @@ def materials():
                     rho_b=2650.0,  # Bulk density
                     # Dislocation creep
                     a_p=AGPa(100,2.4),   # Preexponential scaling factor / Pa^(-n)/s
-                    n=2.4,         # Power law exponent
+                    n=1.9,         # Power law exponent
                     q_p=137.0e3))  # Activation energy J/mol
     r.append(dict(name='granite',
                     altname='',
